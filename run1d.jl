@@ -6,7 +6,7 @@ include("src/targets.jl")
 
 # set some algorithm parameters
 dim     = 1 # dimension
-lambda_sigma = [0.2, 0.2]  #lambda  = smoothness penalty coeff and sigma =  the scale of the reproducing kernel
+lambda_sigma = [1.1, 0.1]  #lambda  = smoothness penalty coeff and sigma =  the scale of the reproducing kernel
 
 # generate the data:  X
 tmpx = [rand(50), randn(75)/10 + .8]
@@ -32,11 +32,11 @@ target = targetUnif1d # this sets an alias to a function giving in the file targ
 #-------------------------------------------------------
 #  gradient ascent on kappa and eta_coeff
 #--------------------------------------------------------
-for counter = 1:50
+for counter = 1:70
 	tic()
 	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, phix, Dphix)
 	# kappa  += 0.01 * dlkappa
-	eta_coeff += 0.001 * dleta_coeff
+	eta_coeff += 0.0001 * dleta_coeff
 	toc()
 end
 
