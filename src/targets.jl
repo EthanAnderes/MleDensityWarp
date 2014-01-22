@@ -22,6 +22,11 @@ function targetUnif1d(kappa::Array{Array{Float64,1}})
 	end
 	density, gradH
 end
+
+
+#------------------------------------
+#  2-d targets
+#--------------------------------------------
 function targetUnif2d(kappa::Array{Array{Float64,1}})
 	TargSig = 0.05
 	density = Float64[]
@@ -38,10 +43,19 @@ function targetUnif2d(kappa::Array{Array{Float64,1}})
 	end
 	density, gradH
 end
-
+function hfun32d(kappa::Array{Array{Float64,1}})
+	targsig = 1.0
+	density = Float64[]
+	gradH   = Array{Float64,1}[]
+	for k = 1:length(kappa)
+		push!(density, exp(-(kappa[k][1].^2 + kappa[k][2].^2) / (2 * targsig^2)  ) / (2 * pi * targsig^2) )
+		push!(gradH,[-kappa[k][1]/(targsig^2) , -kappa[k][2] / (targsig^2)]) 
+	end
+	density, gradH
+end
 
 #------------------------------------
-#  2-d targets
+# The following is old code and needs to be ported to Julia 
 #--------------------------------------------
 function targetGaussianMixture2d(x, p,mu1,mu2,sigma1,sigma2)
 	den=  p*normpdf(x,mu1,sigma1) + (1-p)*normpdf(x,mu2,sigma2)
@@ -51,6 +65,7 @@ function targetGaussianMixture2d(x, p,mu1,mu2,sigma1,sigma2)
 	gradH=(dden1+dden2)./den
 	den, gradH
 end
+
 function hfun12d(DefXnew,DefYnew)
 	n=2
 	sigma=.5
@@ -68,13 +83,6 @@ function hfun22d(DefXnew,DefYnew)
 	grady=(-1/sigma2^2).*(DefYnew)
 	
 	expH=(1/sigma)*(gamma(n/2)/(sqrt(pi)*gamma((n-1)/2))) * (1+(DefXnew/sigma).^2).^(-n/2).*(1/(sqrt(2*pi)*sigma2)).*(exp(-DefYnew.^2/(2*sigma^2)))
-	expH, gradx, grady
-end
-function hfun32d(DefXnew,DefYnew)
-	sigma=.5
-	gradx= -(DefXnew)/(sigma^2)   
-	grady= -(DefYnew)/(sigma^2) 
-	expH= exp(-(DefXnew.^2+DefYnew.^2)/(2*sigma^2)  )/(2*pi*sigma.^2)
 	expH, gradx, grady
 end
 

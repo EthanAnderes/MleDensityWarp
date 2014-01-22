@@ -1,3 +1,4 @@
+
 #---------------------------------------
 # the flow eta, kappa, phix and Dphix forward
 #---------------------------------------
@@ -188,6 +189,14 @@ function g1g1R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
 	 -1*g1g2R(x,y,sigma)
 end
 
+
+
+
+function meshgrid(side_x,side_y)
+	x = repmat(reshape([side_x],(1,length(side_x))) ,length(side_y),1)
+	y = repmat(reshape([side_y],(length(side_y),1)) ,1,length(side_x))
+	x,y
+end
 
 
 #---------------------------------------

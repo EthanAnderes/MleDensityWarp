@@ -18,9 +18,12 @@ kappa     = Array{Float64,1}[X[i]       for i in 1:N ]
 append!(kappa, Array{Float64,1}[[linspace(-1.0,1.5, 50)[i]]  for i in 1:50])
 n_knots = length(kappa)
 eta_coeff = Array{Float64,1}[zero(kappa[i]) for i in 1:n_knots ]
+
+# initialize phix and Dphix which are used to compute the likelihood
 phix      = X
 Dphix     = Array{Float64,1}[[1.0] for i in 1:N]
 
+# initialze the points which are used to visualize the density
 x_grd = linspace(-1.0,1.5, 200)  
 N_grd = length(x_grd)
 phix_grd_0  = Array{Float64,1}[[x_grd[i]] for i=1:N_grd]
