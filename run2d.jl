@@ -15,8 +15,9 @@ X = Array{Float64,1}[[tmpx[i]-mean(tmpx), tmpy[i]-mean(tmpy)] for i=1:N]
 
 # initialize kappa and eta_coeff
 kappa     = Array{Float64,1}[X[i]       for i in 1:N ]
-x_grd_kns, y_grd_kns =  meshgrid(linspace(-1.0,1.5, 10),linspace(-1.0,1.5, 10))
-append!(kappa, Array{Float64,1}[ [x_grd_kns[i], y_grd_kns[i]] for i in 1:length(x_grd_kns)])
+#kappa     = Array{Float64,1}[]
+#x_grd_kns, y_grd_kns =  meshgrid(linspace(-1.0,1.0, 25),linspace(-1.0,1.0, 25))
+#append!(kappa, Array{Float64,1}[ [x_grd_kns[i], y_grd_kns[i]] for i in 1:length(x_grd_kns)])
 n_knots   = length(kappa)
 eta_coeff = Array{Float64,1}[zero(kappa[i]) for i in 1:n_knots ]
 
@@ -25,7 +26,7 @@ phix      = X
 Dphix     = Array{Float64,2}[eye(2) for i in 1:N]
 
 # initialze the points which are used to visualize the density
-x_grd, y_grd =  meshgrid(linspace(-1.0,1.5, 50),linspace(-1.0,1.5, 50))   
+x_grd, y_grd =  meshgrid(linspace(-1.0,1.5, 150),linspace(-1.0,1.5, 150))   
 N_grd = length(x_grd)
 phix_grd_0  = Array{Float64,1}[[x_grd[i], y_grd[i]] for i=1:N_grd]
 
@@ -36,11 +37,11 @@ target = hfun32d # this sets an alias to a function giving in the file targets.j
 #-------------------------------------------------------
 #  gradient ascent on kappa and eta_coeff
 #--------------------------------------------------------
-for counter = 1:100
+for counter = 1:50
 	tic()
 	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, phix, Dphix)
 	# kappa  += 0.01 * dlkappa
-	eta_coeff += 0.0002 * dleta_coeff
+	eta_coeff += 0.001 * dleta_coeff
 	toc()
 end
 
@@ -54,9 +55,11 @@ det_grd = Float64[abs(det(Dphix_grd_1[i][1])) for i=1:N_grd]
 den, placeholder = target(phix_grd_0)
 est_den = det_grd .* den
 # plt.contour(Float64[point[1] for point in phix_grd_0], Float64[point[2] for point in phix_grd_0], est_den[:])
-plt.contour(x_grd, y_grd, reshape(est_den,size(x_grd)) )
 plt.scatter(Float64[point[1] for point in X], Float64[point[2] for point in X])
+plt.contour(x_grd, y_grd, reshape(est_den,size(x_grd)),30 )
 plt.show()
+
+
 
 # savepath = "images/run1"
 # if isdir(savepath) 

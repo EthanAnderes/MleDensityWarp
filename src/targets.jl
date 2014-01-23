@@ -27,6 +27,7 @@ end
 #------------------------------------
 #  2-d targets
 #--------------------------------------------
+"The following uniform target needs to be fixed"
 function targetUnif2d(kappa::Array{Array{Float64,1}})
 	TargSig = 0.05
 	density = Float64[]
@@ -44,7 +45,7 @@ function targetUnif2d(kappa::Array{Array{Float64,1}})
 	density, gradH
 end
 function hfun32d(kappa::Array{Array{Float64,1}})
-	targsig = 1.0
+	targsig = 0.5
 	density = Float64[]
 	gradH   = Array{Float64,1}[]
 	for k = 1:length(kappa)
