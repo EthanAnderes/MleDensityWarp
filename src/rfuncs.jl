@@ -1,3 +1,5 @@
+typealias Arrayd{dim} Array{Array{Float64,dim},1}
+
 
 #---------------------------------------
 # the flow eta, kappa, phix and Dphix forward
@@ -18,7 +20,7 @@ function d_dt(lambda_sigma, epsilon, eta_coeff, kappa, phix, Dphix, phix_grd, Dp
     Dph_g= prodc(lambda_sigma[1] * epsilon,  d_Dphix_dt(eta_coeff, kappa, phix_grd, Dphix_grd, lambda_sigma[2]))
     et_c, ka, ph, Dph, ph_g, Dph_g
 end
-function d_eta_dt(eta_coeff, kappa, sigma)
+function d_eta_dt(eta_coeff::Arrayd{1}, kappa::Arrayd{1}, sigma::Float64)
 	dd = size(eta_coeff[1])
 	tmp = Array{Float64,1}[zeros(dd) for i in 1:length(eta_coeff)]
 	for i = 1:length(kappa)
@@ -28,7 +30,7 @@ function d_eta_dt(eta_coeff, kappa, sigma)
 	end
 	tmp
 end
-function d_kappa_dt(eta_coeff, kappa, sigma)
+function d_kappa_dt(eta_coeff::Arrayd{1}, kappa::Arrayd{1}, sigma::Float64)
 	dd = size(kappa[1])
 	tmp = Array{Float64,1}[zeros(dd) for i in 1:length(kappa)]
 	for i = 1:length(kappa)
@@ -38,7 +40,7 @@ function d_kappa_dt(eta_coeff, kappa, sigma)
 	end
 	tmp
 end
-function d_phix_dt(eta_coeff, kappa, phix, sigma)
+function d_phix_dt(eta_coeff::Arrayd{1}, kappa::Arrayd{1}, phix::Arrayd{1}, sigma::Float64)
 	dd = size(phix[1])
 	tmp = Array{Float64,1}[zeros(dd) for i in 1:length(phix)]
 	for i = 1:length(phix)
@@ -48,7 +50,7 @@ function d_phix_dt(eta_coeff, kappa, phix, sigma)
 	end
 	tmp
 end
-function d_Dphix_dt{dim}(eta_coeff, kappa, phix, Dphix::Array{Array{Float64,dim},1}, sigma)
+function d_Dphix_dt{dim}(eta_coeff::Arrayd{1}, kappa::Arrayd{1}, phix::Arrayd{1}, Dphix::Arrayd{dim}, sigma::Float64)
 	dd = size(Dphix[1])
 	tmp = Array{Float64,dim}[zeros(dd) for i in 1:length(phix)]
 	for i = 1:length(Dphix)
@@ -72,7 +74,7 @@ function transd_dt(lambda_sigma, epsilon, eta_coeff, dleta_coeff, kappa, dlkappa
 	dDph  = prodc(lambda_sigma[1] * epsilon,  transd_dlDphix_dt(eta_coeff, kappa, phix, dlDphix, lambda_sigma[2]))
 	et_c, ka, ph, Dph, det_c, dka, dph, dDph
 end
-function transd_dlDphix_dt{dim}(eta_coeff,  kappa,  phix, dlDphix::Array{Array{Float64,dim},1}, sigma)
+function transd_dlDphix_dt{dim}(eta_coeff,  kappa,  phix, dlDphix::Arrayd{dim}, sigma)
 	n_knots = length(eta_coeff)
 	n_phis  = length(dlDphix)
 	returnval = dim == 1 ? Array{Float64,1}[[0.0] for i in 1:n_phis] : Array{Float64,dim}[zeros(dim,dim) for i in 1:n_phis]
@@ -81,7 +83,7 @@ function transd_dlDphix_dt{dim}(eta_coeff,  kappa,  phix, dlDphix::Array{Array{F
 	end
 	prodc(-1.0, returnval)
 end
-function transd_dlphix_dt{dim}(eta_coeff, kappa, phix, dlphix, Dphix, dlDphix::Array{Array{Float64,dim},1}, sigma)
+function transd_dlphix_dt{dim}(eta_coeff, kappa, phix, dlphix, Dphix, dlDphix::Arrayd{dim}, sigma)
 	n_knots  = length(eta_coeff)
 	n_phis  = length(dlphix)
 	returnval = Array{Float64,1}[zeros(dim) for i in 1:n_phis]
@@ -93,7 +95,7 @@ function transd_dlphix_dt{dim}(eta_coeff, kappa, phix, dlphix, Dphix, dlDphix::A
 	end
 	prodc(-1.0, returnval)
 end
-function transd_dlkappa_dt{dim}(eta_coeff, dleta_coeff, kappa, dlkappa, phix, dlphix, Dphix, dlDphix::Array{Array{Float64,dim},1}, sigma)
+function transd_dlkappa_dt{dim}(eta_coeff, dleta_coeff, kappa, dlkappa, phix, dlphix, Dphix, dlDphix::Arrayd{dim}, sigma)
 	n_knots  = length(eta_coeff)
 	n_phis   = length(dlphix)
 	returnval = Array{Float64,1}[zeros(dim) for i in 1:n_knots]
@@ -111,7 +113,7 @@ function transd_dlkappa_dt{dim}(eta_coeff, dleta_coeff, kappa, dlkappa, phix, dl
 	end
 	prodc(-1.0, returnval)
 end
-function transd_dleta_dt{dim}(eta_coeff, dleta_coeff, kappa, dlkappa, phix, dlphix, Dphix, dlDphix::Array{Array{Float64,dim},1}, sigma)
+function transd_dleta_dt{dim}(eta_coeff, dleta_coeff, kappa, dlkappa, phix, dlphix, Dphix, dlDphix::Arrayd{dim}, sigma)
 	n_knots = length(kappa)
 	n_phis  = length(phix)
 	returnval = Array{Float64,1}[ zeros(dim) for i in 1:n_knots]
@@ -134,8 +136,8 @@ end
 #------------------------------------
 # misc function
 #------------------------------------
-function prodc{n}(pp::Float64, cellA::Array{Array{Float64,n},1})
-	Array{Float64,n}[ pp*cellA[i] for i = 1:length(cellA) ]
+function prodc{dim}(pp::Float64, cellA::Arrayd{dim})
+	Array{Float64,dim}[ pp*cellA[i] for i = 1:length(cellA) ]
 end
 
 
