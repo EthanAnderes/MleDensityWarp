@@ -1,7 +1,7 @@
 #------------------------------------
 #  1-d targets
 #--------------------------------------------
-function targetUnif1d(kappa::Array{Array{Float64,1}})
+function targetUnif1d(kappa::Array{Array{Float64,1},1})
 	TargSig = 0.05
 	density = Float64[]
 	gradH   = Array{Float64,1}[]
@@ -28,7 +28,7 @@ end
 #  2-d targets
 #--------------------------------------------
 "The following uniform target needs to be fixed"
-function targetUnif2d(kappa::Array{Array{Float64,1}})
+function targetUnif2d(kappa::Array{Array{Float64,1},1})
 	TargSig = 0.05
 	density = Float64[]
 	gradH   = Array{Float64,1}[]
@@ -44,7 +44,7 @@ function targetUnif2d(kappa::Array{Array{Float64,1}})
 	end
 	density, gradH
 end
-function hfun32d(kappa::Array{Array{Float64,1}})
+function hfun32d(kappa::Array{Array{Float64,1},1})
 	targsig = 0.5
 	density = Float64[]
 	gradH   = Array{Float64,1}[]
