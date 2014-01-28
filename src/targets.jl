@@ -1,39 +1,37 @@
 #------------------------------------
 #  Uniform targets
 #--------------------------------------------
-function targetUnif1d(kappa::Array{Array{Float64,1},1})
-	TargSig = 0.25 # this controls the decay of the smooth trucation
-	Limit = 1.0
+function targetUnif1d(kappa::Array{Array{Float64,1},1}; targSig = 0.1, limit = 0.4, center = 0.0)
 	density = Float64[]
 	gradH   = Array{Float64,1}[]
 	for k =1:length(kappa)
 		kap = kappa[k][1]
-		if kap <= -Limit
-			dentmp = exp(-((kap + Limit).^2.0)/(2.0 * TargSig * TargSig))
-			gradHtmp = (-((kap + Limit))/(TargSig.^2.0)) 
-		elseif -Limit < kap < Limit
+		if kap <= center-limit
+			dentmp = exp(-((kap  - (center - limit)).^2.0)/(2.0 * targSig * targSig)) 
+			gradHtmp = -(kap - (center - limit)) / (targSig.^2.0) 
+		elseif center-limit < kap < center+limit
 			dentmp = 1.0
 			gradHtmp = 0.0
 		else
-			dentmp = exp(-((kap - Limit).^2.0)/(2.0*TargSig.^2.0))
-			gradHtmp = (-((kap - Limit))/(TargSig.^2.0))
+			dentmp = exp(-((kap - (center + limit)).^2.0)/(2.0*targSig.^2.0))
+			gradHtmp = -(kap - (center + limit)) / (targSig.^2.0) 
 		end
-		push!(density, dentmp/(Limit + Limit + TargSig*sqrt(2.0*pi)))
+		push!(density, dentmp / (limit + limit + targSig*sqrt(2.0*pi))  )
 		push!(gradH,[gradHtmp])
 	end
 	density, gradH
 end
-function targetUnif2d(kappa::Array{Array{Float64,1},1})
+function targetUnif2d(kappa::Array{Array{Float64,1},1}; targSig = 0.1, limit = 0.4, center = 0.0)
 	N = length(kappa)
-	densitx, gradHx = targetUnif1d(Array{Float64,1}[[kappa[i][1]] for i=1:N] )
-	density, gradHy = targetUnif1d(Array{Float64,1}[[kappa[i][2]] for i=1:N] )
-	densitx.*density, Array{Float64,1}[[gradHx[i][1], gradHy[i][1]] for i=1:N] 
+	densitx, gradHx = targetUnif1d(Array{Float64,1}[[kappa[i][1]] for i=1:N]; targSig = targSig, limit = limit, center = center)
+	density, gradHy = targetUnif1d(Array{Float64,1}[[kappa[i][2]] for i=1:N]; targSig = targSig, limit = limit, center = center)
+	densitx .* density, Array{Float64,1}[[gradHx[i][1], gradHy[i][1]] for i=1:N] 
 end
-function targetUnif3d(kappa::Array{Array{Float64,1},1})
+function targetUnif3d(kappa::Array{Array{Float64,1},1}; targSig = 0.1, limit = 0.4, center = 0.0)
 	N = length(kappa)
-	densitx, gradHx = targetUnif1d(Array{Float64,1}[[kappa[i][1]] for i=1:N] )
-	density, gradHy = targetUnif1d(Array{Float64,1}[[kappa[i][2]] for i=1:N] )
-	densitz, gradHz = targetUnif1d(Array{Float64,1}[[kappa[i][2]] for i=1:N] )
+	densitx, gradHx = targetUnif1d(Array{Float64,1}[[kappa[i][1]] for i=1:N]; targSig = targSig, limit = limit, center = center)
+	density, gradHy = targetUnif1d(Array{Float64,1}[[kappa[i][2]] for i=1:N]; targSig = targSig, limit = limit, center = center)
+	densitz, gradHz = targetUnif1d(Array{Float64,1}[[kappa[i][2]] for i=1:N]; targSig = targSig, limit = limit, center = center)
 	densitx .* density .* densitz, Array{Float64,1}[[gradHx[i][1], gradHy[i][1], gradHz[i][1]] for i=1:N]
 end 
 
@@ -55,7 +53,7 @@ function targetNormal2d(kappa::Array{Array{Float64,1},1})
 	N = length(kappa)
 	densitx, gradHx = targetNormal1d(Array{Float64,1}[[kappa[i][1]] for i=1:N] )
 	density, gradHy = targetNormal1d(Array{Float64,1}[[kappa[i][2]] for i=1:N] )
-	densitx.*density, Array{Float64,1}[[gradHx[i][1], gradHy[i][1]] for i=1:N]
+	densitx .* density, Array{Float64,1}[[gradHx[i][1], gradHy[i][1]] for i=1:N]
 end 
 function targetNormal3d(kappa::Array{Array{Float64,1},1})
 	N = length(kappa)

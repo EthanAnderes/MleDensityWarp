@@ -3,12 +3,18 @@ include("src/rfuncs.jl")
 include("src/targets.jl")
 
 # set some algorithm parameters
-lambda_sigma = [0.1, 0.4]  #lambda  = smoothness penalty coeff and sigma =  the scale of the reproducing kernel
+lambda_sigma = [0.1, 0.01]  #lambda  = smoothness penalty coeff and sigma =  the scale of the reproducing kernel
 
-# generate the data:  X
-tmpx = [rand(50), randn(75)/10 + .8]
+# generate the data:  X and set the target measure
+tmpx = [rand(50), randn(175)/10 + .8]
 N = length(tmpx)
 X = Array{Float64,1}[[(tmpx[i]-mean(tmpx))/std(tmpx)] for i=1:N]
+
+# X = Array{Float64,1}[[(tmpx[i]-mean(tmpx))/std(tmpx)] for i=1:N]
+# target(x) = targetUnif1d(x; targSig = 0.1, limit = 0.5, center = 0.5) # this sets an alias to a function giving in the file targets.jl
+
+X = Array{Float64,1}[[(tmpx[i]- minimum(tmpx))/maximum(tmpx)] for i=1:N]
+target(x) = targetUnif1d(x; targSig = 0.1, limit = 0.5, center = 0.5) # this sets an alias to a function giving in the file targets.jl
 
 
 # initialize kappa and eta_coeff
@@ -23,14 +29,9 @@ phix      = deepcopy(X)
 Dphix     = Array{Float64,1}[[1.0] for i in 1:N]
 
 # initialze the points which are used to visualize the density
-x_grd = linspace(-2.5,2.5, 200)  
+x_grd = linspace(-0.1,1.1, 100)  
 N_grd = length(x_grd)
 phix_grd_0  = Array{Float64,1}[[x_grd[i]] for i=1:N_grd]
-
-# set the target measure
-# target = targetUnif1d # this sets an alias to a function giving in the file targets.jl
-target = targetNormal1d # this sets an alias to a function giving in the file targets.jl
-
 
 
 #-------------------------------------------------------
@@ -40,7 +41,7 @@ for counter = 1:40
 	tic()
 	dlkappa, dleta_coeff = get_grad(lambda_sigma, deepcopy(kappa), deepcopy(eta_coeff), deepcopy(phix), deepcopy(Dphix))
 	# kappa     += prodc(0.01, dlkappa)
-	eta_coeff += prodc(0.01, dleta_coeff)
+	eta_coeff += prodc(0.001, dleta_coeff)
 	toc()
 end
 
