@@ -3,7 +3,7 @@ include("src/rfuncs.jl")
 include("src/targets.jl")
 
 # set some algorithm parameters
-lambda_sigma = [0.1, 0.2]  #lambda  = smoothness penalty coeff and sigma =  the scale of the reproducing kernel
+lambda_sigma = [0.1, 0.4]  #lambda  = smoothness penalty coeff and sigma =  the scale of the reproducing kernel
 
 # generate the data:  X
 tmpx = [rand(50), randn(75)/10 + .8]
@@ -14,7 +14,7 @@ X = Array{Float64,1}[[(tmpx[i]-mean(tmpx))/std(tmpx)] for i=1:N]
 # initialize kappa and eta_coeff
 kappa     = Array{Float64,1}[X[i]  for i in 1:round(N/2)]
 kappa_init = deepcopy(kappa)
-append!(kappa, Array{Float64,1}[[linspace(-1.0,1.0, 25)[i]]  for i in 1:25])
+#append!(kappa, Array{Float64,1}[[linspace(-1.0,1.0, 25)[i]]  for i in 1:25])
 n_knots   = length(kappa)
 eta_coeff = Array{Float64,1}[zero(kappa[i]) for i in 1:n_knots]
 

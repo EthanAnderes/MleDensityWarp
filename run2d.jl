@@ -1,8 +1,3 @@
-"TODP add kappas gradient"
-"TODO: test hamiltonian"
-"TODO: test  3-d"
-"TODO: bgfs"
-
 include("src/ode.jl")
 include("src/rfuncs.jl")
 include("src/targets.jl")
