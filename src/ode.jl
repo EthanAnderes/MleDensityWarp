@@ -13,7 +13,7 @@ function get_grad{oneOrtwo}(lambda_sigma, kappa, eta_coeff, phix, Dphix::Array{A
 	dEtaDt   = Array{Float64,1}[zeros(dim) for i in 1:Nkappa]
 	dKappaDt = Array{Float64,1}[zeros(dim) for i in 1:Nkappa]
 	dPhixDt  = Array{Float64,1}[zeros(dim) for i in 1:Nphix]
-	dDphixDt = Array{Float64,oneOrtwo}[zeros(Dphix[1]) for i in 1:Nphix]
+	dDphixDt = Array{Float64,oneOrtwo}[zero(Dphix[1]) for i in 1:Nphix]
 	# time = 0 now
 	for counter = 1:stepsODE # this flows forward
 		d_eta_dt!(dEtaDt,     eta_coeff, kappa, sigma, epsilon)
