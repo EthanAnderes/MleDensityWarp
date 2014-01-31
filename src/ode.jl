@@ -2,7 +2,7 @@
 #   get the gradient
 #--------------------------------
 # kappa is geting mutated
-function get_grad{oneOrtwo}(lambda_sigma, kappa, eta_coeff, phix, Dphix::Array{Array{Float64,oneOrtwo},1})
+function get_grad!{oneOrtwo}(lambda_sigma, kappa, eta_coeff, phix, Dphix::Array{Array{Float64,oneOrtwo},1})
 	stepsODE = 45
 	epsilon = 1.0/stepsODE
 	Nkappa = length(kappa)
@@ -75,11 +75,13 @@ function get_grad{oneOrtwo}(lambda_sigma, kappa, eta_coeff, phix, Dphix::Array{A
 	dlkappa, dleta_coeff
 end
 
+# this is the function all which doesn't mutate the arguments
+get_grad(lambda_sigma, kappa, eta_coeff, phix, Dphix) = get_grad!(lambda_sigma, deepcopy(kappa), deepcopy(eta_coeff), deepcopy(phix), deepcopy(Dphix)) 
 
 #---------------------------------
 #   flow forward
 #---------------------------------
-function forward_flow{oneOrtwo}(sigma, kappa, eta_coeff, phix_grd, Dphix_grd::Array{Array{Float64,oneOrtwo},1})
+function forward_flow!{oneOrtwo}(sigma, kappa, eta_coeff, phix_grd, Dphix_grd::Array{Array{Float64,oneOrtwo},1})
 	stepsODE = 45
 	epsilon = 1.0/stepsODE
 	Nkappa = length(kappa)
@@ -105,6 +107,14 @@ function forward_flow{oneOrtwo}(sigma, kappa, eta_coeff, phix_grd, Dphix_grd::Ar
 	end
 	phix_grd, Dphix_grd
 end
+
+forward_flow(sigma, kappa, eta_coeff, phix_grd, Dphix_grd) = forward_flow!(sigma, deepcopy(kappa), deepcopy(eta_coeff), deepcopy(phix_grd), deepcopy(Dphix_grd))
+
+
+
+
+
+
 function sqez(X)
 	Xmat = X[1]
 	for k=2:length(X)
@@ -112,4 +122,9 @@ function sqez(X)
 	end
 	Xmat
 end
+
+
+
+
+
 # plt.plot(sqez(X)[1,:], sqez(X)[2,:],"."); plt.show()
