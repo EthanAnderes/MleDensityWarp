@@ -44,7 +44,7 @@ function targetNormal1d(kappa::Array{Array{Float64,1},1})
 	density = Float64[]
 	gradH   = Array{Float64,1}[]
 	for k = 1:length(kappa)
-		push!(density, exp(-1.0 * kappa[k][1] .* kappa[k][1] / (2.0 * targsig * targsig)  ) / (sqrt(2.0 * pi) * targsig) )
+		push!(density, exp(- kappa[k][1] .* kappa[k][1] / (2.0 * targsig * targsig)  ) / (sqrt(2.0 * pi) * targsig) )
 		push!(gradH,[-kappa[k][1]/ (targsig * targsig)]) 
 	end
 	density, gradH

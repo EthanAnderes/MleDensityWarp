@@ -54,14 +54,14 @@ function get_grad!{oneOrtwo}(lambda_sigma, kappa, eta_coeff, phix, Dphix::Array{
 		for k = 1:Nkappa
 			eta_coeff[k]  -= dEtaDt[k]
 			kappa[k]      -= dKappaDt[k]
-			dleta_coeff[k]-= transdlEta[k]
-			dlkappa[k]    -= transdlKappa[k]
+			dleta_coeff[k]+= transdlEta[k]
+			dlkappa[k]    += transdlKappa[k]
 		end
 		for k = 1:Nphix
 			phix[k]       -= dPhixDt[k]
 			Dphix[k]      -= dDphixDt[k]
-			dlphix[k]     -= transdlphix[k]
-			dlDphix[k]    -= transDphix[k]
+			dlphix[k]     += transdlphix[k]
+			dlDphix[k]    += transDphix[k]
 		end
 	end
 	# time = 0 now

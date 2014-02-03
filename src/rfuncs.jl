@@ -48,7 +48,7 @@ function transd_dlDphix_dt!{oneOrTwo}(transDphix::Arrayd{oneOrTwo}, eta_coeff::A
 		transDphix[i] = zero(transDphix[1])
 		for j = 1:length(eta_coeff) 
 			for col = 1:dim 
-				transDphix[i][:,col] =  transDphix[i][:,col] - epsilon * gradR(phix[i], kappa[j],sigma) * transpose(eta_coeff[j]) * dlDphix[i][:,col]
+				transDphix[i][:,col] =  transDphix[i][:,col] + epsilon * gradR(phix[i], kappa[j],sigma) * transpose(eta_coeff[j]) * dlDphix[i][:,col]
 			end
 		end
 	end
@@ -72,17 +72,17 @@ function transd_dlkappa_dt!{oneOrTwo}(transdlKappa::Arrayd{1}, eta_coeff::Arrayd
 	for i = 1:length(transdlKappa)
 		transdlKappa[i] = zero(transdlKappa[1])
 		for j = 1:length(kappa)
-			transdlKappa[i] += epsilon * dot(eta_coeff[i],eta_coeff[j]) .* (g1g1R(kappa[i], kappa[j], sigma) * dleta_coeff[i])
-			transdlKappa[i] += epsilon * dot(eta_coeff[i],eta_coeff[j]) .* (g1g2R(kappa[j], kappa[i], sigma) * dleta_coeff[j])
+			transdlKappa[i] -= epsilon * dot(eta_coeff[i],eta_coeff[j]) .* (g1g1R(kappa[i], kappa[j], sigma) * dleta_coeff[i])
+			transdlKappa[i] -= epsilon * dot(eta_coeff[i],eta_coeff[j]) .* (g1g2R(kappa[j], kappa[i], sigma) * dleta_coeff[j])
 			transdlKappa[i] += epsilon * gradR(kappa[i], kappa[j],sigma) * transpose(eta_coeff[j]) * dlkappa[i]
-			transdlKappa[i] -= epsilon * gradR(kappa[j], kappa[i],sigma) * transpose(eta_coeff[i]) * dlkappa[j]
+			transdlKappa[i] += epsilon * gradR(kappa[j], kappa[i],sigma) * transpose(eta_coeff[i]) * dlkappa[j]
 		end
 	end
 	for i = 1:length(transdlKappa)
 		for j = 1:length(phix)
 			transdlKappa[i] += epsilon * gradR(phix[j], kappa[i],sigma) * transpose(eta_coeff[i]) * dlphix[j]
 			for col = 1:dim
-				transdlKappa[i] -=  epsilon * g1g2R(phix[j], kappa[i],sigma) * Dphix[j][:,col] * transpose(eta_coeff[i]) * dlDphix[j][:,col]
+				transdlKappa[i] +=  epsilon * g1g2R(phix[j], kappa[i],sigma) * Dphix[j][:,col] * transpose(eta_coeff[i]) * dlDphix[j][:,col]
 			end
 		end
 	end
@@ -93,15 +93,15 @@ function transd_dleta_dt!{oneOrTwo}(transdlEta::Arrayd{1}, eta_coeff::Arrayd{1},
 	for i = 1:length(kappa) 
 		transdlEta[i] = zero(transdlEta[i])
 		for j = 1:length(kappa)
-			transdlEta[i] +=  epsilon * eta_coeff[j] * transpose(gradR(kappa[i], kappa[j],sigma)) * dleta_coeff[i]
-			transdlEta[i] +=  epsilon * eta_coeff[j] * transpose(gradR(kappa[j], kappa[i],sigma)) * dleta_coeff[j]
-			transdlEta[i] -=  epsilon * R(kappa[j], kappa[i], sigma) * dlkappa[j]
+			transdlEta[i] -=  epsilon * eta_coeff[j] * transpose(gradR(kappa[i], kappa[j],sigma)) * dleta_coeff[i]
+			transdlEta[i] -=  epsilon * eta_coeff[j] * transpose(gradR(kappa[j], kappa[i],sigma)) * dleta_coeff[j]
+			transdlEta[i] +=  epsilon * R(kappa[j], kappa[i], sigma) * dlkappa[j]
 		end
 	end
 	for i = 1:length(kappa), j = 1:length(phix)
-		transdlEta[i] -= epsilon * R(phix[j], kappa[i], sigma) * dlphix[j]
+		transdlEta[i] += epsilon * R(phix[j], kappa[i], sigma) * dlphix[j]
 		for col = 1:dim
-			transdlEta[i] -= epsilon * dot(Dphix[j][:,col], gradR(phix[j], kappa[i],sigma)) * dlDphix[j][:,col]
+			transdlEta[i] += epsilon * dot(Dphix[j][:,col], gradR(phix[j], kappa[i],sigma)) * dlDphix[j][:,col]
 		end
 	end
 end
@@ -121,24 +121,24 @@ end
 # kernel evals and derivatives...these are local to this module
 #------------------------------------
 function r(d,sigma)
-	 exp(-0.5 * d.*d ./(sigma*sigma))
+	 exp(-0.5 * d .* d ./ (sigma * sigma))
 end
 function rp(d,sigma)
-	 -d ./ (sigma*sigma * exp(d.*d./(2.0*sigma*sigma)))
+	 -d .* r(d,sigma) ./ (sigma * sigma) 
 end
 # # test:  
-# d = rand(dim) 
+# d = rand(3) 
 # delta_d = 0.00001*[0,1,0]
 # ( (r(d+delta_d, 3) - r(d, 3))/.00001  )[2] ==? rp(d,3)[2]
 function rp_div_d(d,sigma) 
-	 -1.0./(sigma*sigma*exp(d.*d/(2.0*sigma*sigma)))
+	 -r(d,sigma) ./ (sigma * sigma) 
 end
 function rpp(d,sigma)
-	 d.*d./(sigma*sigma*sigma*sigma*exp(d.*d/(2.0*sigma*sigma))) - 1./(sigma*sigma*exp(d.*d/(2.0*sigma*sigma)))
+	 d .* d .* r(d,sigma) ./ (sigma * sigma * sigma * sigma) - r(d,sigma) ./ (sigma * sigma)
 end
 "TODO: test everything below this line"
 function rppp(d,sigma)
-	 (3.0 * d)./(sigma*sigma*sigma*sigma*exp(d.*d/(2.0*sigma*sigma))) - d.*d.*d./(sigma^6.0*exp(d.*d/(2.0*sigma*sigma)))
+	 -d .* d .* d .* r(d,sigma) ./ (sigma.^6.0) +  3.0 * d .* r(d,sigma) ./(sigma * sigma * sigma * sigma)
 end
 function R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
 	r(norm(x-y),sigma)
@@ -152,18 +152,20 @@ function outer{T<:Number}(u::Array{T,1},v::Array{T,1})
 	length(u) == 1 ? u[1]*v[1] : u*transpose(v)
 end
 function g1g2R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
-	v=x-y
-	n=norm(v)
+	v = x-y
+	n = norm(v)
+	u = v/n
 	eey = length(x) == 1 ? 1.0 : eye(length(x))
-	G=rp_div_d(n,sigma)*eey
-	if n!=0
-		u=v/n
-		G+=outer(u,-u) *(rpp(n,sigma)-rp_div_d(n,sigma))
+	if n == 0
+		G = - rpp(n,sigma) * eey 
+	else
+		G = -rp_div_d(n,sigma) * eey
+		G += outer(u,-u) * (rpp(n,sigma)-rp_div_d(n,sigma)) 
+		return G
 	end
-	G
 end
 function g1g1R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
-	 -1.0*g1g2R(x,y,sigma)
+	 -1.0 * g1g2R(x,y,sigma)
 end
 
 

@@ -29,11 +29,6 @@ eta_coeff = Array{Float64,1}[zero(kappa[i]) for i in 1:n_knots]
 phix      = deepcopy(X)
 Dphix     = Array{Float64,2}[eye(2) for i in 1:N]
 
-# initialze the points which are used to visualize the density
-x_grd, y_grd =  meshgrid(linspace(-0.1, 1.1, 50),linspace(-0.1, 1.1, 50))   
-N_grd = length(x_grd)
-phix_grd_0  = Array{Float64,1}[[x_grd[i], y_grd[i]] for i=1:N_grd]
-
 
 
 #-------------------------------------------------------
@@ -43,7 +38,7 @@ for counter = 1:10
 	tic()
 	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, phix, Dphix)
 	# kappa     += prodc(0.01, dlkappa)
-	eta_coeff += prodc(0.0005, dleta_coeff)
+	eta_coeff += prodc(0.001, dleta_coeff)
 	toc()
 end
 
@@ -51,6 +46,12 @@ end
 #----------------------------------------------------------
 #  visualize
 #----------------------------------------------------------
+x_grd, y_grd =  meshgrid(linspace(-0.1, 1.1, 50),linspace(-0.1, 1.1, 50))   
+N_grd = length(x_grd)
+phix_grd_0  = Array{Float64,1}[[x_grd[i], y_grd[i]] for i=1:N_grd]
+
+
+
 using  PyCall
 @pyimport matplotlib.pyplot as plt 
 phix_grd_1, Dphix_grd_1 = forward_flow(lambda_sigma[2], kappa, eta_coeff, phix_grd_0, Array{Float64,2}[eye(2) for i in 1:N_grd])
