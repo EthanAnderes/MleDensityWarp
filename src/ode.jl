@@ -3,7 +3,7 @@
 #--------------------------------
 # kappa is geting mutated
 function get_grad!{oneOrtwo}(lambda_sigma, kappa, eta_coeff, phix, Dphix::Array{Array{Float64,oneOrtwo},1})
-	stepsODE = 45
+	stepsODE = 100
 	epsilon = 1.0/stepsODE
 	Nkappa = length(kappa)
 	Nphix = length(phix)
@@ -82,7 +82,7 @@ get_grad(lambda_sigma, kappa, eta_coeff, phix, Dphix) = get_grad!(lambda_sigma, 
 #   flow forward
 #---------------------------------
 function forward_flow!{oneOrtwo}(sigma, kappa, eta_coeff, phix_grd, Dphix_grd::Array{Array{Float64,oneOrtwo},1})
-	stepsODE = 45
+	stepsODE = 100
 	epsilon = 1.0/stepsODE
 	Nkappa = length(kappa)
 	Nphix = length(phix_grd)

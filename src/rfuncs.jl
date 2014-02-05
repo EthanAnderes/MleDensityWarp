@@ -44,12 +44,10 @@ end
 # transDphix   = Array{Float64,2}[zeros(dim,dim) for i in 1:N]
 function transd_dlDphix_dt!{oneOrTwo}(transDphix::Arrayd{oneOrTwo}, eta_coeff::Arrayd{1}, kappa::Arrayd{1}, phix::Arrayd{1}, dlDphix::Arrayd{oneOrTwo}, sigma, epsilon)
 	dim = length(kappa[1])
-	for i = 1:length(transDphix)
-		transDphix[i] = zero(transDphix[1])
+	for i = 1:length(transDphix), col = 1:dim 
+		transDphix[i][:,col] = zero(transDphix[1][:,col])
 		for j = 1:length(eta_coeff) 
-			for col = 1:dim 
-				transDphix[i][:,col] =  transDphix[i][:,col] + epsilon * gradR(phix[i], kappa[j],sigma) * transpose(eta_coeff[j]) * dlDphix[i][:,col]
-			end
+			transDphix[i][:,col] =  transDphix[i][:,col] + epsilon * gradR(phix[i], kappa[j],sigma) * transpose(eta_coeff[j]) * dlDphix[i][:,col]
 		end
 	end
 end
@@ -61,7 +59,7 @@ function transd_dlphix_dt!{oneOrTwo}(transdlphix::Arrayd{1}, eta_coeff::Arrayd{1
 		for j = 1:length(kappa)
 			transdlphix[i] += epsilon * gradR(phix[i], kappa[j],sigma) * transpose(eta_coeff[j]) * dlphix[i]
 			for col = 1:dim
-				transdlphix[i] += epsilon * g1g1R(phix[i], kappa[j],sigma) * Dphix[i][:,col] * transpose(eta_coeff[j]) * dlDphix[i][:,col]
+				transdlphix[i] += epsilon * g1g1R(phix[i], kappa[j], sigma) * Dphix[i][:,col] * transpose(eta_coeff[j]) * dlDphix[i][:,col]
 			end
 		end
 	end
@@ -75,12 +73,12 @@ function transd_dlkappa_dt!{oneOrTwo}(transdlKappa::Arrayd{1}, eta_coeff::Arrayd
 			transdlKappa[i] -= epsilon * dot(eta_coeff[i],eta_coeff[j]) .* (g1g1R(kappa[i], kappa[j], sigma) * dleta_coeff[i])
 			transdlKappa[i] -= epsilon * dot(eta_coeff[i],eta_coeff[j]) .* (g1g2R(kappa[j], kappa[i], sigma) * dleta_coeff[j])
 			transdlKappa[i] += epsilon * gradR(kappa[i], kappa[j],sigma) * transpose(eta_coeff[j]) * dlkappa[i]
-			transdlKappa[i] += epsilon * gradR(kappa[j], kappa[i],sigma) * transpose(eta_coeff[i]) * dlkappa[j]
+			transdlKappa[i] -= epsilon * gradR(kappa[j], kappa[i],sigma) * transpose(eta_coeff[i]) * dlkappa[j]
 		end
 	end
 	for i = 1:length(transdlKappa)
 		for j = 1:length(phix)
-			transdlKappa[i] += epsilon * gradR(phix[j], kappa[i],sigma) * transpose(eta_coeff[i]) * dlphix[j]
+			transdlKappa[i] -= epsilon * gradR(phix[j], kappa[i],sigma) * transpose(eta_coeff[i]) * dlphix[j]
 			for col = 1:dim
 				transdlKappa[i] +=  epsilon * g1g2R(phix[j], kappa[i],sigma) * Dphix[j][:,col] * transpose(eta_coeff[i]) * dlDphix[j][:,col]
 			end
@@ -108,14 +106,6 @@ end
 
 
 
-#------------------------------------
-# misc function
-#------------------------------------
-function prodc{oneOrTwo}(pp::Float64, cellA::Arrayd{oneOrTwo})
-	Array{Float64,oneOrTwo}[ pp*cellA[i] for i = 1:length(cellA) ]
-end
-
-
 
 #---------------------------------------
 # kernel evals and derivatives...these are local to this module
@@ -136,7 +126,6 @@ end
 function rpp(d,sigma)
 	 d .* d .* r(d,sigma) ./ (sigma * sigma * sigma * sigma) - r(d,sigma) ./ (sigma * sigma)
 end
-"TODO: test everything below this line"
 function rppp(d,sigma)
 	 -d .* d .* d .* r(d,sigma) ./ (sigma.^6.0) +  3.0 * d .* r(d,sigma) ./(sigma * sigma * sigma * sigma)
 end
@@ -168,33 +157,16 @@ function g1g1R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
 	 -1.0 * g1g2R(x,y,sigma)
 end
 
-
-
-
+#------------------------------------
+# misc functions
+#--------------------------------------------
 function meshgrid(side_x,side_y)
 	x = repmat(reshape([side_x],(1,length(side_x))) ,length(side_y),1)
 	y = repmat(reshape([side_y],(length(side_y),1)) ,1,length(side_x))
 	x,y
 end
-
-"TODO: program a conservation of hamiltonian test"
-
-#---------------------------------------
-# for testing some of the above code
-#------------------------------------
-# # test the functions in the module using the following inputs
-# dim = 2 # dimension
-# sigma = 2.0       # the scale of the reproducing kernel
-# n_phis  = 20
-# n_knots = 10
-# phix      = {rand(dim) for i in 1:n_phis }
-# Dphix     = {rand(dim,dim) for i in 1:n_phis}
-# eta_coeff = {rand(dim) for i in 1:n_knots }
-# kappa     = {rand(dim) for i in 1:n_knots }
-
-# dlphix      = {rand(dim) for i in 1:n_phis }
-# dlDphix     = {rand(dim,dim) for i in 1:n_phis}
-# dleta_coeff = {rand(dim) for i in 1:n_knots }
-# dlkappa     = {rand(dim) for i in 1:n_knots }
+function prodc{oneOrTwo}(pp::Float64, cellA::Arrayd{oneOrTwo})
+	Array{Float64,oneOrTwo}[ pp*cellA[i] for i = 1:length(cellA) ]
+end
 
 

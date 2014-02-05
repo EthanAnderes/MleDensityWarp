@@ -64,20 +64,6 @@ function targetNormal3d(kappa::Array{Array{Float64,1},1})
 end 
 
 
-
-# function targetNormal2d(kappa::Array{Array{Float64,1},1})
-# 	targsig = 1.0
-# 	density = Float64[]
-# 	gradH   = Array{Float64,1}[]
-# 	for k = 1:length(kappa)
-# 		push!(density, exp(-(kappa[k][1].^2 + kappa[k][2].^2) / (2 * targsig^2)  ) / (2 * pi * targsig^2) )
-# 		push!(gradH,[-kappa[k][1]/(targsig^2) , -kappa[k][2] / (targsig^2)]) 
-# 	end
-# 	density, gradH
-# end
-
-
-
 #------------------------------------
 # The following is old code and needs to be ported to Julia 
 #--------------------------------------------
