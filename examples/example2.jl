@@ -40,6 +40,7 @@ for counter = 1:25
 	eta_coeff += prodc(0.002, dleta_coeff)
 	toc()
 end
+saveim(1)
 
 
 #  gradient ascent on kappa and eta_coeff
@@ -50,7 +51,7 @@ for counter = 1:25
 	eta_coeff += prodc(0.002, dleta_coeff)
 	toc()
 end
-
+saveim(2)
 
 
 #  gradient ascent on kappa and eta_coeff
@@ -61,4 +62,5 @@ for counter = 1:25
 	eta_coeff += prodc(0.002, dleta_coeff)
 	toc()
 end
+saveim(3)
 
