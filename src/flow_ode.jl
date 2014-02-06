@@ -141,7 +141,7 @@ get_grad(lambda_sigma, kappa, eta_coeff, phix, Dphix) = get_grad!(lambda_sigma, 
 function forward_flow!{oneOrtwo}(sigma, kappa, eta_coeff, phix_grd, Dphix_grd::Array{Array{Float64,oneOrtwo},1})
 	Nkappa = length(kappa)
 	Nphix = length(phix_grd)
-	dim = length(phix[1])
+	dim = length(phix_grd[1])
 	size_Dphix=size(Dphix_grd[1])
 
 	y0={kappa,eta_coeff,phix_grd,Dphix_grd}
