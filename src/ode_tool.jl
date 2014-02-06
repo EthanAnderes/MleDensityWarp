@@ -5,7 +5,7 @@ module ODE
 using Polynomial
 
 ## minimal function export list
-export ode23, ode23_abstract, ode4, ode45, ode4s, ode4ms
+export ode23, ode23_abstract, ode23_abstract_end, ode4, ode45, ode4s, ode4ms
 
 ## complete function export list
 #export ode23, ode4,
@@ -205,7 +205,82 @@ function ode23_abstract{T}(F::Function, tspan::AbstractVector, y0::AbstractVecto
 
     return (tout, yout)
 
-end # ode23_abs
+end # ode23_abstract
+
+## this version just returns the ending values of t and y
+function ode23_abstract_end{T}(F::Function, tspan::AbstractVector, y0::AbstractVector{T})
+
+    rtol = 1.e-5
+    atol = 1.e-8
+    threshold = atol / rtol
+
+    t = tspan[1]
+    tfinal = tspan[end]
+    tdir = sign(tfinal - t)
+    hmax = abs(0.1*(tfinal-t))
+    y = y0
+
+    tlen = length(t)
+
+    # Compute initial step size.
+
+    s1 = F(t, y)
+    ##r = norm(s1./max(abs(y), threshold), Inf) + realmin() # TODO: fix type bug in max()
+    r = norm_inf_any(s1./max(norm_inf_any(y), threshold)) + realmin() # TODO: fix type bug in max()
+    h = tdir*0.8*rtol^(1/3)/r
+
+    # The main loop.
+
+    while t != tfinal
+
+        hmin = 16*eps()*abs(t)
+        if abs(h) > hmax; h = tdir*hmax; end
+        if abs(h) < hmin; h = tdir*hmin; end
+
+        # Stretch the step if t is close to tfinal.
+
+        if 1.1*abs(h) >= abs(tfinal - t)
+            h = tfinal - t
+        end
+
+        # Attempt a step.
+
+        s2 = F(t+h/2, y+h/2*s1)
+        s3 = F(t+3*h/4, y+3*h/4*s2)
+        tnew = t + h
+        ynew = y + h*(2*s1 + 3*s2 + 4*s3)/9
+        s4 = F(tnew, ynew)
+
+        # Estimate the error.
+
+        e = h*(-5*s1 + 6*s2 + 8*s3 - 9*s4)/72
+        ##err = norm(e./max(max(abs(y), abs(ynew)), threshold), Inf) + realmin()
+        err = norm_inf_any(e)/max(max(norm_inf_any(y), norm_inf_any(ynew)), threshold) + realmin()
+
+        # Accept the solution if the estimated error is less than the tolerance.
+
+        if err <= rtol
+            t = tnew
+            y = ynew
+            s1 = s4   # Reuse final function value to start new step
+        end
+
+        # Compute a new step size.
+
+        h = h*min(5, 0.8*(rtol/err)^(1/3))
+
+        # Exit early if step size is too small.
+
+        if abs(h) <= hmin
+            println("Step size ", h, " too small at t = ", t)
+            t = tfinal
+        end
+
+    end # while (t != tfinal)
+
+    return (t, y)
+
+end # ode23_abstract_end
 
 
 # ode45 adapted from http://users.powernet.co.uk/kienzle/octave/matcompat/scripts/ode_v1.11/ode45.m

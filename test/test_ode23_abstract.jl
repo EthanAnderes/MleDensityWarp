@@ -9,4 +9,5 @@ function F(t, yy)
     d1=[1,1]
     {[d0 d1],1}
 end
-(T,Y)=ode23_abstract(F, tspan, {y0,0})
+#(T,Y)=ode23_abstract(F, tspan, {y0,0}) ## get samples from the whole ode path
+(t1,y1)=ode23_abstract_end(F, tspan, {y0,0}) ## just get the ending value at the terminal time
