@@ -1,4 +1,4 @@
-include("../src/ode.jl")
+include("../src/flow_ode.jl")
 include("../src/rfuncs.jl")
 include("../src/targets.jl")
 using  PyCall
