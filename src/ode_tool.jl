@@ -124,6 +124,10 @@ function norm_inf_any(y::Array{Float64,1})
     norm(y,Inf)
 end
 
+function norm_inf_any{D}(y::Array{Float64,D})
+    norm(y,Inf)
+end
+
 function norm_inf_any{T}(y::Array{T,1})
     m=-Inf
     for (i in 1:size(y,1))

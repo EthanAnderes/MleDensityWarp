@@ -77,7 +77,6 @@ using ODE_TOOL
 #--------------------------------
 # kappa is geting mutated
 function get_grad!{oneOrtwo}(lambda_sigma, kappa, eta_coeff, phix, Dphix::Array{Array{Float64,oneOrtwo},1})
-	stepsODE = 100
 	Nkappa = length(kappa)
 	Nphix = length(phix)
 	sigma = lambda_sigma[2]
@@ -140,29 +139,22 @@ get_grad(lambda_sigma, kappa, eta_coeff, phix, Dphix) = get_grad!(lambda_sigma, 
 #   flow forward
 #---------------------------------
 function forward_flow!{oneOrtwo}(sigma, kappa, eta_coeff, phix_grd, Dphix_grd::Array{Array{Float64,oneOrtwo},1})
-	stepsODE = 100
-	epsilon = 1.0/stepsODE
 	Nkappa = length(kappa)
 	Nphix = length(phix_grd)
-	# initialize the delta s
-	dEtaDt   = Array{Float64,1}[zero(kappa[1]) for i in 1:Nkappa]
-	dKappaDt = Array{Float64,1}[zero(kappa[1]) for i in 1:Nkappa]
-	dPhixDt_grd  = Array{Float64,1}[zero(kappa[1]) for i in 1:Nphix]
-	dDphixDt_grd = Array{Float64,oneOrtwo}[zero(Dphix_grd[1]) for i in 1:Nphix]
-	for counter = 1:stepsODE
-		d_eta_dt!(dEtaDt,  eta_coeff, kappa, sigma, epsilon)
-		d_kappa_dt!(dKappaDt, eta_coeff, kappa, sigma, epsilon)
-		d_phix_dt!(dPhixDt_grd, eta_coeff, kappa, phix_grd, sigma, epsilon)
-		d_Dphix_dt!(dDphixDt_grd, eta_coeff, kappa, phix_grd, Dphix_grd, sigma, epsilon)
-		for k = 1:Nkappa
-			eta_coeff[k] +=  dEtaDt[k]
-			kappa[k]    +=  dKappaDt[k]
-		end
-		for k = 1:Nphix
-			phix_grd[k]   +=  dPhixDt_grd[k]
-			Dphix_grd[k]  +=  dDphixDt_grd[k]
-		end
-	end
+	size_Dphix=size(Dphix_grd[1])
+
+	y0={kappa,eta_coeff,phix_grd,Dphix_grd}
+	dydt(t,y)=d_forward_dt(t,y,sigma,dim,Nkappa,Nphix,size_Dphix)
+	# Flow y0 forward to time 1
+	(t1,y1)=ode23_abstract_end(dydt,[0,1],y0)
+	#Update using the time 1 state
+	(kappa,eta_coeff,phix_grd,Dphix_grd)=y1
+	#Restore types
+	kappa=convert(Array{Array{Float64,1},1},kappa)
+	eta_coeff=convert(Array{Array{Float64,1},1},eta_coeff)
+	phix_grd=convert(Array{Array{Float64,1},1},phix_grd)
+	Dphix_grd=convert(Array{Array{Float64,length(size_Dphix)},1},Dphix_grd)
+
 	phix_grd, Dphix_grd
 end
 
