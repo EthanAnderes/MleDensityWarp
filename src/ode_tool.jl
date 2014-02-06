@@ -1,6 +1,6 @@
 # Ordinary Differential Equation Solvers
 
-module ODE
+module ODE_TOOL
 
 using Polynomial
 
@@ -120,10 +120,14 @@ function ode23{T}(F::Function, tspan::AbstractVector, y0::AbstractVector{T})
 
 end # ode23
 
-function norm_inf_any(y::Array{Any,1})
+function norm_inf_any(y::Array{Float64,1})
+    norm(y,Inf)
+end
+
+function norm_inf_any{T}(y::Array{T,1})
     m=-Inf
     for (i in 1:size(y,1))
-        m=max(norm(y[i],Inf),m)
+        m=max(norm_inf_any(y[i]),m)
     end
     m
 end
@@ -609,4 +613,4 @@ end
 # Use order 4 by default
 ode4ms(F, tspan, x0) = ode_ms(F, tspan, x0, 4)
 
-end # module ODE
+end # module ODE_TOOL

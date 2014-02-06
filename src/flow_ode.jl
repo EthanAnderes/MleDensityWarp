@@ -1,4 +1,35 @@
 #---------------------------------
+#   Helper function to compute the forward d/dt of kappa,eta,phix,Dphix
+#--------------------------------
+
+function d_kepDp_dt(t,y,sigma,dim,Nkappa,Nphix,size_Dphix)
+    # input y is assumed to be of the form {kappa,eta_coeff,phix,Dphix}
+    # First, unpack this
+    (kappa,eta_coeff,phix,Dphix)=y
+    kappa=convert(Array{Array{Float64,1},1},kappa)
+    eta_coeff=convert(Array{Array{Float64,1},1},eta_coeff)
+    phix=convert(Array{Array{Float64,1},1},phix)
+    Dphix=convert(Array{Array{Float64,length(size_Dphix)},1},Dphix)
+
+    # Then construct new structures to hold the d/dt's
+    dKappaDt = Array{Float64,1}[zeros(dim) for i in 1:Nkappa]
+    dEtaDt   = Array{Float64,1}[zeros(dim) for i in 1:Nkappa]
+    dPhixDt  = Array{Float64,1}[zeros(dim) for i in 1:Nphix]
+    dDphixDt = Array{Float64,length(size_Dphix)}[zeros(size_Dphix) for i in 1:Nphix]
+
+    # And compute their new values (by mutation)
+    d_kappa_dt!(dKappaDt, eta_coeff, kappa, sigma, 1.0)
+    d_eta_dt!(dEtaDt,     eta_coeff, kappa, sigma, 1.0)
+    d_phix_dt!(dPhixDt,   eta_coeff, kappa, phix, sigma, 1.0)
+    d_Dphix_dt!(dDphixDt, eta_coeff, kappa, phix, Dphix, sigma, 1.0)
+    # Finally return the d/dt in the same order as y
+    {dKappaDt,dEtaDt,dPhixDt,dDphixDt}
+end
+
+include("ode_tool.jl")
+using ODE_TOOL
+
+#---------------------------------
 #   get the gradient
 #--------------------------------
 # kappa is geting mutated
@@ -9,27 +40,47 @@ function get_grad!{oneOrtwo}(lambda_sigma, kappa, eta_coeff, phix, Dphix::Array{
 	Nphix = length(phix)
 	sigma = lambda_sigma[2]
 	dim = length(phix[1])
-	# initialize the delta 
-	dEtaDt   = Array{Float64,1}[zeros(dim) for i in 1:Nkappa]
+	size_Dphix=size(Dphix[1])
+
+	y0={kappa,eta_coeff,phix,Dphix}
+	dydt(t,y)=d_kepDp_dt(t,y,sigma,dim,Nkappa,Nphix,size(Dphix[1]))
+	# Flow y0 forward to time 1
+	(t1,y1)=ode23_abstract_end(dydt,[0,1],y0)
+	#Update using the time 1 state
+	(kappa,eta_coeff,phix,Dphix)=y1
+	#Restore types
+	kappa=convert(Array{Array{Float64,1},1},kappa)
+	eta_coeff=convert(Array{Array{Float64,1},1},eta_coeff)
+	phix=convert(Array{Array{Float64,1},1},phix)
+	Dphix=convert(Array{Array{Float64,length(size_Dphix)},1},Dphix)
+
+	## initialize the delta 
+	#dEtaDt   = Array{Float64,1}[zeros(dim) for i in 1:Nkappa]
+	#dKappaDt = Array{Float64,1}[zeros(dim) for i in 1:Nkappa]
+	#dPhixDt  = Array{Float64,1}[zeros(dim) for i in 1:Nphix]
+	#dDphixDt = Array{Float64,oneOrtwo}[zero(Dphix[1]) for i in 1:Nphix]
+	## time = 0 now
+	#for counter = 1:stepsODE # this flows forward
+	#	d_eta_dt!(dEtaDt,     eta_coeff, kappa, sigma, epsilon)
+	#	d_kappa_dt!(dKappaDt, eta_coeff, kappa, sigma, epsilon)
+	#	d_phix_dt!(dPhixDt,   eta_coeff, kappa, phix, sigma, epsilon)
+	#	d_Dphix_dt!(dDphixDt, eta_coeff, kappa, phix, Dphix, sigma, epsilon)
+	#	for k = 1:Nkappa
+	#		eta_coeff[k] += dEtaDt[k]
+	#		kappa[k]     += dKappaDt[k]
+	#	end
+	#	for k = 1:Nphix
+	#		phix[k]      += dPhixDt[k]
+	#		Dphix[k]     += dDphixDt[k]
+	#	end
+	#end
+	## time = 1 now
+
 	dKappaDt = Array{Float64,1}[zeros(dim) for i in 1:Nkappa]
+	dEtaDt   = Array{Float64,1}[zeros(dim) for i in 1:Nkappa]
 	dPhixDt  = Array{Float64,1}[zeros(dim) for i in 1:Nphix]
-	dDphixDt = Array{Float64,oneOrtwo}[zero(Dphix[1]) for i in 1:Nphix]
-	# time = 0 now
-	for counter = 1:stepsODE # this flows forward
-		d_eta_dt!(dEtaDt,     eta_coeff, kappa, sigma, epsilon)
-		d_kappa_dt!(dKappaDt, eta_coeff, kappa, sigma, epsilon)
-		d_phix_dt!(dPhixDt,   eta_coeff, kappa, phix, sigma, epsilon)
-		d_Dphix_dt!(dDphixDt, eta_coeff, kappa, phix, Dphix, sigma, epsilon)
-		for k = 1:Nkappa
-			eta_coeff[k] += dEtaDt[k]
-			kappa[k]     += dKappaDt[k]
-		end
-		for k = 1:Nphix
-			phix[k]      += dPhixDt[k]
-			Dphix[k]     += dDphixDt[k]
-		end
-	end
-	# time = 1 now
+	dDphixDt = Array{Float64,length(size_Dphix)}[zeros(size_Dphix) for i in 1:Nphix]
+
 	dlphix      = Array{Float64,1}[target(phix)[2][i]/Nphix for i = 1:Nphix]
 	if oneOrtwo == 1
 		dlDphix = Array{Float64,1}[(1/Dphix[i])/Nphix for i = 1:Nphix]
