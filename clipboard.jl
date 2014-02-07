@@ -226,39 +226,18 @@ error("exiting the script now")
 # speed check for Array{Float64,2} vrs Array{Array{Float64,1},1}
 using  PyCall
 @pyimport matplotlib.pyplot as plt 
-include("src/ode.jl")
+include("src/flow_ode.jl")
 include("src/rfuncs.jl")
 include("src/targets.jl")
 
 
-typealias Arrayd{dim} Array{Array{Float64,dim},1}
-tmpx = [rand(50), randn(75)/10 + .8]
+# typealias Arrayd{dim} Array{Array{Float64,dim},1}
+tmpx = [rand(50), randn(75)/10.0 + .8]
 tmpy = tmpx + rand(size(tmpx)) .* 1.1
 N = length(tmpx)
 X = Array{Float64,1}[[tmpx[i]-mean(tmpx), tmpy[i]-mean(tmpy)] for i=1:N]
 kappa_cell     = Array{Float64,1}[X[i]       for i in 1:N ]
 eta_coeff_cell = Array{Float64,1}[zero(kappa_cell[i]) for i in 1:N ]
-
-# kappa_splat     = Array(Float64,(N,2))
-# eta_coeff_splat     = Array(Float64,(N,2))
-# for i = 1:N
-# 	kappa_splat[i,:] = transpose(X[i]) 
-# 	eta_coeff_splat[i,:] = [0.0 0.0]
-# end
-# function d_eta_dt(eta_coeff::Array{Float64,2}, kappa::Array{Float64,2})
-# 	sigma = 1.0
-# 	dd = size(kappa,1)
-# 	tmp = zeros(kappa)
-# 	for i = 1:size(kappa,2)
-# 	 	for j = 1:size(kappa,2) 
-# 			tmp[i,:] -= transpose(dot(eta_coeff[i,:][:],eta_coeff[i,:][:]) * gradR(kappa[i,:][:], kappa[i,:][:],sigma) )
-# 		end
-# 	end
-# 	tmp
-# end
-
-
-
 
 kappa_splat     = Array(Float64,(2,N))
 eta_coeff_splat     = Array(Float64,(2,N))
@@ -266,22 +245,39 @@ for i = 1:N
 	kappa_splat[:,i] = X[i] 
 	eta_coeff_splat[:,i] = [0.0, 0.0]
 end
-function d_eta_dt(eta_coeff::Array{Float64,2}, kappa::Array{Float64,2})
+function d_eta_dt1(eta_coeff::Array{Float64,2}, kappa::Array{Float64,2})
 	sigma = 1.0
 	dd = size(kappa,1)
 	tmp = zeros(kappa)
 	for i = 1:size(kappa,2)
-	 	for j = 1:size(kappa,2) 
-			tmp[:,i] = tmp[:,i] - dot(eta_coeff[:,i],eta_coeff[:,i]) * gradR(kappa[:,i], kappa[:,i],sigma)
+	 	for j = 1:size(kappa,2)
+	 		dtij = dot(eta_coeff[:,i],eta_coeff[:,j]) 
+	 		gRij = gradR(kappa[:,i], kappa[:,j],sigma)
+	 		for z = 1:size(kappa,1)
+				tmp[z,i] -=  dtij*gRij[z]
+			end
 		end
 	end
 	tmp
 end
-
-
-
-
-
+function d_eta_dt2(eta_coeff::Array{Float64,2}, kappa::Array{Float64,2})
+	sigma = 1.0
+	dd = size(kappa,1)
+	tmp = zeros(kappa)
+	for i = 1:size(kappa,2)
+	 	for j = 1:size(kappa,2)
+	 		dtij = 0.0
+	 		for z = 1:size(kappa,1)
+	 			dtij += eta_coeff[z,i]*eta_coeff[z,j]
+	 		end
+	 		gRij = gradR([1.0, 2.0], [1.0, 2.0],sigma)
+	 		for z = 1:size(kappa,1)
+				tmp[z,i] -=  dtij*gRij[z]
+			end
+		end
+	end
+	tmp
+end
 function d_eta_dt(eta_coeff, kappa)
 	sigma = 1.0
 	dd = size(eta_coeff[1])
@@ -295,12 +291,13 @@ function d_eta_dt(eta_coeff, kappa)
 end
 
 
-d_eta_dt(eta_coeff_splat, kappa_splat)
+d_eta_dt1(eta_coeff_splat, kappa_splat)
+d_eta_dt2(eta_coeff_splat, kappa_splat)
 d_eta_dt(eta_coeff_cell, kappa_cell)
 
 
-
+@time d_eta_dt1(eta_coeff_splat, kappa_splat);
+@time d_eta_dt2(eta_coeff_splat, kappa_splat);
 @time d_eta_dt(eta_coeff_cell, kappa_cell);
-@time d_eta_dt(eta_coeff_splat, kappa_splat);
 
 

@@ -32,8 +32,8 @@ end
 
 
 #  gradient ascent on eta_coeff
-lambda_sigma = [10.0, 0.05] 
-for counter = 1:20
+lambda_sigma = [5.0, 0.1] 
+for counter = 1:30
 	tic()
 	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, X, Array{Float64,1}[[1.0] for i in 1:N])
 	eta_coeff += prodc(0.002, dleta_coeff)
@@ -44,8 +44,8 @@ saveim(1)
 
 
 #  gradient ascent on eta_coeff
-lambda_sigma = [5.0, 0.05] 
-for counter = 1:20
+lambda_sigma = [1.0, 0.1] 
+for counter = 1:30
 	tic()
 	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, X, Array{Float64,1}[[1.0] for i in 1:N])
 	eta_coeff += prodc(0.002, dleta_coeff)
@@ -57,8 +57,8 @@ saveim(2)
 
 
 #  gradient ascent on eta_coeff
-lambda_sigma = [1.0, 0.05] 
-for counter = 1:20
+lambda_sigma = [0.1, 0.1] 
+for counter = 1:30
 	tic()
 	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, X, Array{Float64,1}[[1.0] for i in 1:N])
 	eta_coeff += prodc(0.002, dleta_coeff)
