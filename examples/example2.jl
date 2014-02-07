@@ -4,12 +4,12 @@ include("../src/targets.jl")
 using  PyCall
 @pyimport matplotlib.pyplot as plt 
 
-tmpx = [rand(50), randn(70)/10 + .8]
+tmpx = [rand(50), randn(100)/10 + .8]
 tmpy = tmpx + rand(size(tmpx)) .* 1.1
 N = length(tmpx)
 
 X = Array{Float64,1}[[(tmpx[i]- minimum(tmpx))/maximum(tmpx), (tmpy[i]-minimum(tmpy))/maximum(tmpy)] for i=1:N]
-target(x) = targetUnif2d(x; targSig = 0.1, limit = 0.25, center = 0.5) # this sets an alias to a function giving in the file targets.jl
+target(x) = targetUnif2d(x; targSig = 0.1, limit = 0.35, center = 0.5) # this sets an alias to a function giving in the file targets.jl
 kappa     = Array{Float64,1}[X[i]  for i in 1:round(N/2)]
 n_knots   = length(kappa)
 eta_coeff = Array{Float64,1}[zero(kappa[i]) for i in 1:n_knots]
@@ -33,7 +33,7 @@ end
 
 
 #  gradient ascent on kappa and eta_coeff
-lambda_sigma = [10.0, 0.05] 
+lambda_sigma = [5.0, 0.1] 
 for counter = 1:25
 	tic()
 	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, X, Array{Float64,2}[eye(2) for i in 1:N])
@@ -44,7 +44,7 @@ saveim(1)
 
 
 #  gradient ascent on kappa and eta_coeff
-lambda_sigma = [5.0, 0.05] 
+lambda_sigma = [1.0, 0.1] 
 for counter = 1:25
 	tic()
 	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, X, Array{Float64,2}[eye(2) for i in 1:N])
@@ -55,7 +55,7 @@ saveim(2)
 
 
 #  gradient ascent on kappa and eta_coeff
-lambda_sigma = [1.0, 0.05] 
+lambda_sigma = [0.1, 0.1] 
 for counter = 1:25
 	tic()
 	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, X, Array{Float64,2}[eye(2) for i in 1:N])
