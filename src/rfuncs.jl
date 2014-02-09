@@ -110,52 +110,55 @@ end
 #---------------------------------------
 # kernel evals and derivatives...these are local to this module
 #------------------------------------
-function r(d,sigma)
-	 exp(-0.5 * d .* d ./ (sigma * sigma))
-end
-function rp(d,sigma)
-	 -d .* r(d,sigma) ./ (sigma * sigma) 
-end
-# # test:  
-# d = rand(3) 
-# delta_d = 0.00001*[0,1,0]
-# ( (r(d+delta_d, 3) - r(d, 3))/.00001  )[2] ==? rp(d,3)[2]
-function rp_div_d(d,sigma) 
-	 -r(d,sigma) ./ (sigma * sigma) 
-end
+r(d::Number,sigma) = exp(-0.5 * d * d / (sigma * sigma))
+
+rp_div_d(d,sigma) = -r(d,sigma) / (sigma * sigma) 
+
 function rpp(d,sigma)
-	 d .* d .* r(d,sigma) ./ (sigma * sigma * sigma * sigma) - r(d,sigma) ./ (sigma * sigma)
+	rd = r(d,sigma)
+	s2 = sigma * sigma
+	d * d * rd / (s2 * s2) - rd / s2
 end
-function rppp(d,sigma)
-	 -d .* d .* d .* r(d,sigma) ./ (sigma.^6.0) +  3.0 * d .* r(d,sigma) ./(sigma * sigma * sigma * sigma)
-end
+
 function R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
 	r(norm(x-y),sigma)
 end
+
 function gradR{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
 	v=x-y
 	n=norm(v)
-	rp_div_d(n,sigma) .* v
+	v * rp_div_d(n,sigma)
 end
+
 function outer{T<:Number}(u::Array{T,1},v::Array{T,1})
 	length(u) == 1 ? u[1]*v[1] : u*transpose(v)
 end
+
 function g1g2R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
 	v = x-y
 	n = norm(v)
 	u = v/n
 	eey = length(x) == 1 ? 1.0 : eye(length(x))
+	rpd = rp_div_d(n,sigma)
 	if n == 0
 		G = - rpp(n,sigma) * eey 
 	else
-		G = -rp_div_d(n,sigma) * eey
-		G += outer(u,-u) * (rpp(n,sigma)-rp_div_d(n,sigma)) 
+		G = -rpd * eey
+		G += outer(u,-u) * (rpp(n,sigma) - rpd) 
 		return G
 	end
 end
+
 function g1g1R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
-	 -1.0 * g1g2R(x,y,sigma)
+	 -g1g2R(x,y,sigma)
 end
+
+
+# # test:  
+# d = rand(3) 
+# delta_d = 0.00001*[0,1,0]
+# ( (r(d+delta_d, 3) - r(d, 3))/.00001  )[2] ==? rp(d,3)[2]
+
 
 #------------------------------------
 # misc functions

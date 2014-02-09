@@ -301,3 +301,108 @@ d_eta_dt(eta_coeff_cell, kappa_cell)
 @time d_eta_dt(eta_coeff_cell, kappa_cell);
 
 
+# from the  above code it is clear that the bottle neck is gradR not the looping
+
+
+
+type Flow
+	kappa::Array{Float64,2}
+	eta_coeff::Array{Float64,2}
+end
+
+flowinstance1 = Flow(rand(2,2), rand(3,3))
+flowinstance1.kappa # prints out kappa
+flowinstance1.eta_coeff # prints out eta
+
+# if you want a default for one of the parameters you can make these constructors
+Flow(x)= Flow(x, eye(2,2))
+Flow()= Flow(eye(2,2), eye(2,2))
+
+flowinstance2 = Flow(rand(2,2))
+flowinstance3 = Flow()
+
+# Define + on Flow types
+function +(a::Flow, b::Flow) 
+	Flow(a.kappa + b.kappa, a.eta_coeff + b.eta_coeff)
+end
+
+flowinstance2 + flowinstance3
+
+# to try and make things faster you can define an immutable type which tells the complier that 
+# the fields will not be re-bound.
+
+
+immutable ImFlow
+	kappa::Array{Float64,2}
+	eta_coeff::Array{Float64,2}
+end
+
+imflowinstance1 = ImFlow(rand(2,2), rand(3,3))
+
+imflowinstance1.kappa = eye(2,2) # this gives an error since I'm trying to re-bind kappa
+imflowinstance1.kappa[1] = 2.0 # this is ok since I'm just changing the entry kappa[1] and not the container kappa
+
+
+##################
+
+r(d::Vector,sigma) = exp( -0.5 * dot(d,d) / (sigma * sigma) )
+
+
+#---------------------------------------
+# kernel evals and derivatives...these are local to this module
+#------------------------------------
+
+#---------------------------------------
+# kernel evals and derivatives...these are local to this module
+#------------------------------------
+r(d::Number,sigma) = exp(-0.5 * d * d / (sigma * sigma))
+rp_div_d(d,sigma) = -r(d,sigma) / (sigma * sigma) 
+function rpp(d,sigma)
+	rd = r(d,sigma)
+	s2 = sigma * sigma
+	d * d * rd / (s2 * s2) - rd / s2
+end
+function outer{T<:Number}(u::Array{T,1},v::Array{T,1})
+	length(u) == 1 ? u[1]*v[1] : u*transpose(v)
+end
+function g1g2R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
+	v = x-y
+	n = norm(v)
+	u = v/n
+	eey = length(x) == 1 ? 1.0 : eye(length(x))
+	rpd = rp_div_d(n,sigma)
+	if n == 0
+		G = - rpp(n,sigma) * eey 
+	else
+		G = -rpd * eey
+		G += outer(u,-u) * (rpp(n,sigma) - rpd) 
+		return G
+	end
+end
+outer2(u,v) = u*transpose(v)
+function g1g2R2(x,y, sigma)
+	v = x-y
+	n = norm(v)
+	u = v/n
+	rpd = rp_div_d(n,sigma)
+	if n == 0.0
+		G =  diagm([-rpp(n,sigma) for k = 1:length(v)])
+	else
+		G =  diagm([-rpd for k = 1:length(v)])
+		G += outer(u,-u) * (rpp(n,sigma) - rpd) 
+		return G
+	end
+end
+
+
+x=[1.0, 2.0]
+y=[1.0, 2.2]
+@time g1g2R(x, y, 2.0)
+@time g1g2R2(x, y, 2.0)
+
+@time g1g2R(x, y, 2.0)
+@time g1g2R2(x, y, 2.0)
+
+
+
+
