@@ -110,38 +110,42 @@ end
 #---------------------------------------
 # kernel evals and derivatives...these are local to this module
 #------------------------------------
-r(d::Number,sigma) = exp(-0.5 * d * d / (sigma * sigma))
+r(d::Real,sigma) = exp(-0.5 * d * d / (sigma * sigma))
 
-rp_div_d(d,sigma) = -r(d,sigma) / (sigma * sigma) 
+function rp_div_d(d::Real,sigma) 
+	s2 = sigma * sigma
+	-exp(-0.5 * d * d / s2) / s2
+end
 
-function rpp(d,sigma)
+function rpp(d::Real,sigma)
 	rd = r(d,sigma)
 	s2 = sigma * sigma
 	d * d * rd / (s2 * s2) - rd / s2
 end
 
-function R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
+function R{T<:Real}(x::Array{T,1},y::Array{T,1},sigma)
 	r(norm(x-y),sigma)
 end
 
-function gradR{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
+function gradR{T<:Real}(x::Array{T,1},y::Array{T,1},sigma)
 	v=x-y
 	n=norm(v)
 	v * rp_div_d(n,sigma)
 end
 
-function outer{T<:Number}(u::Array{T,1},v::Array{T,1})
+function outer{T<:Real}(u::Array{T,1},v::Array{T,1})
 	length(u) == 1 ? u[1]*v[1] : u*transpose(v)
 end
 
-function g1g2R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
+function g1g2R{T<:Real}(x::Array{T,1},y::Array{T,1},sigma)
 	v = x-y
 	n = norm(v)
 	u = v/n
 	eey = length(x) == 1 ? 1.0 : eye(length(x))
 	rpd = rp_div_d(n,sigma)
 	if n == 0
-		G = - rpp(n,sigma) * eey 
+		G = -rpp(n,sigma) * eey 
+		return G
 	else
 		G = -rpd * eey
 		G += outer(u,-u) * (rpp(n,sigma) - rpd) 
@@ -149,7 +153,7 @@ function g1g2R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
 	end
 end
 
-function g1g1R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
+function g1g1R{T<:Real}(x::Array{T,1},y::Array{T,1},sigma)
 	 -g1g2R(x,y,sigma)
 end
 

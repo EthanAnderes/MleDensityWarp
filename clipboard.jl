@@ -301,6 +301,90 @@ d_eta_dt(eta_coeff_cell, kappa_cell)
 @time d_eta_dt(eta_coeff_cell, kappa_cell);
 
 
+
+
+
+
+#########################################
+
+
+# speed check for Array{Float64,2} vrs Array{Array{Float64,1},1}
+using  PyCall
+@pyimport matplotlib.pyplot as plt 
+include("src/flow_ode.jl")
+include("src/rfuncs.jl")
+include("src/targets.jl")
+# typealias
+# typealias Arrayd{dim} Array{Array{Float64,dim},1}
+tmpx = [rand(50), randn(75)/10.0 + .8]
+tmpy = tmpx + rand(size(tmpx)) .* 1.1
+N = length(tmpx)
+X = Array{Float64,1}[[tmpx[i]-mean(tmpx), tmpy[i]-mean(tmpy)] for i=1:N]
+kappa_cell     = Array{Float64,1}[X[i]       for i in 1:N ]
+eta_coeff_cell = Array{Float64,1}[zero(kappa_cell[i]) for i in 1:N ]
+
+
+    
+
+
+function d_eta_dt(eta_coeff::Arrayd{1}, kappa::Arrayd{1}, sigma, epsilon)
+	dEtaDt   = Array{Float64,1}[zeros(2) for i in 1:length(eta_coeff)]
+	for i = 1:length(dEtaDt)
+		dEtaDt[i] = zero(kappa[1]) # you've got to start it at zero
+		for j = 1:length(kappa) 
+			dEtaDt[i] -=  epsilon * dot(eta_coeff[i],eta_coeff[j]) * gradR(kappa[i], kappa[j], sigma) 
+		end
+	end
+	dEtaDt
+end
+function d_kappa_dt(eta_coeff::Arrayd{1}, kappa::Arrayd{1}, sigma, epsilon)
+	dKappaDt = Array{Float64,1}[zeros(2) for i in 1:length(kappa)]
+	for i = 1:length(dKappaDt)
+		dKappaDt[i] = zero(kappa[1]) # you've got to start it at zero
+		for j = 1:length(kappa) 
+			dKappaDt[i] += epsilon * eta_coeff[j] * R(kappa[i], kappa[j], sigma) 
+		end
+	end
+	dKappaDt
+end
+function d_phix_dt(eta_coeff::Arrayd{1}, kappa::Arrayd{1}, phix::Arrayd{1}, sigma, epsilon)
+	dPhixDt  = Array{Float64,1}[zeros(2) for i in 1:length(phix)]
+	for i = 1:length(dPhixDt)
+		dPhixDt[i] = zero(phix[1])
+		for j = 1:length(kappa) 
+			dPhixDt[i] += epsilon * eta_coeff[j]* R(phix[i], kappa[j], sigma) 
+		end
+	end
+	dPhixDt
+end
+function d_Dphix_dt(eta_coeff::Arrayd{1}, kappa::Arrayd{1}, phix::Arrayd{1}, Dphix::Arrayd{2}, sigma, epsilon)
+    dDphixDt = Array{Float64,2}[zeros(2,2) for i in 1:length(phix)]
+	for i = 1:length(dDphixDt)
+		dDphixDt[i] = zero(Dphix[1]) # you've got to start it at zero
+		for j = 1:length(kappa) 
+			dDphixDt[i] += epsilon * eta_coeff[j] * transpose(gradR(phix[i], kappa[j], sigma)) * Dphix[i]
+		end
+	end
+	dDphixDt
+end
+
+sigma = 0.1
+epsilon = 0.1
+D =  Array{Float64,2}[ones(2,2) for i in 1:length(X)]
+@time d_eta_dt(eta_coeff_cell, kappa_cell, sigma, epsilon);
+@time d_kappa_dt(eta_coeff_cell, kappa_cell, sigma, epsilon);
+@time d_phix_dt(eta_coeff_cell, kappa_cell, X, sigma, epsilon);
+@time d_Dphix_dt(eta_coeff_cell, kappa_cell, X, D, sigma, epsilon);
+@time td_Dphix_dt(eta_coeff_cell, kappa_cell, X, D, sigma, epsilon);
+
+
+
+
+
+
+
+
+
 # from the  above code it is clear that the bottle neck is gradR not the looping
 
 
@@ -345,54 +429,49 @@ imflowinstance1.kappa[1] = 2.0 # this is ok since I'm just changing the entry ka
 
 ##################
 
-r(d::Vector,sigma) = exp( -0.5 * dot(d,d) / (sigma * sigma) )
-
-
 #---------------------------------------
 # kernel evals and derivatives...these are local to this module
 #------------------------------------
-
-#---------------------------------------
-# kernel evals and derivatives...these are local to this module
-#------------------------------------
-r(d::Number,sigma) = exp(-0.5 * d * d / (sigma * sigma))
-rp_div_d(d,sigma) = -r(d,sigma) / (sigma * sigma) 
-function rpp(d,sigma)
+r(d::Real,sigma) = exp(-0.5 * d * d / (sigma * sigma))
+function rp_div_d(d::Real,sigma) 
+	s2 = sigma * sigma
+	-exp(-0.5 * d * d / s2) / s2
+end
+function rpp(d::Real,sigma)
 	rd = r(d,sigma)
 	s2 = sigma * sigma
 	d * d * rd / (s2 * s2) - rd / s2
 end
-function outer{T<:Number}(u::Array{T,1},v::Array{T,1})
+function R{T<:Real}(x::Array{T,1},y::Array{T,1},sigma)
+	r(norm(x-y),sigma)
+end
+function gradR{T<:Real}(x::Array{T,1},y::Array{T,1},sigma)
+	v=x-y
+	n=norm(v)
+	v * rp_div_d(n,sigma)
+end
+function outer{T<:Real}(u::Array{T,1},v::Array{T,1})
 	length(u) == 1 ? u[1]*v[1] : u*transpose(v)
 end
-function g1g2R{T<:Number}(x::Array{T,1},y::Array{T,1},sigma)
+function g1g2R{T<:Real}(x::Array{T,1},y::Array{T,1},sigma)
 	v = x-y
 	n = norm(v)
 	u = v/n
 	eey = length(x) == 1 ? 1.0 : eye(length(x))
 	rpd = rp_div_d(n,sigma)
 	if n == 0
-		G = - rpp(n,sigma) * eey 
+		G = -rpp(n,sigma) * eey 
+		return G
 	else
 		G = -rpd * eey
 		G += outer(u,-u) * (rpp(n,sigma) - rpd) 
 		return G
 	end
 end
-outer2(u,v) = u*transpose(v)
-function g1g2R2(x,y, sigma)
-	v = x-y
-	n = norm(v)
-	u = v/n
-	rpd = rp_div_d(n,sigma)
-	if n == 0.0
-		G =  diagm([-rpp(n,sigma) for k = 1:length(v)])
-	else
-		G =  diagm([-rpd for k = 1:length(v)])
-		G += outer(u,-u) * (rpp(n,sigma) - rpd) 
-		return G
-	end
+function g1g1R{T<:Real}(x::Array{T,1},y::Array{T,1},sigma)
+	 -g1g2R(x,y,sigma)
 end
+
 
 
 x=[1.0, 2.0]

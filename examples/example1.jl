@@ -66,3 +66,17 @@ for counter = 1:30
 end
 saveim(3)
 
+
+
+
+#  gradient ascent on eta_coeff
+lambda_sigma = [0.05, 0.05] 
+for counter = 1:30
+	tic()
+	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, X, Array{Float64,1}[[1.0] for i in 1:N])
+	eta_coeff += prodc(0.002, dleta_coeff)
+	toc()
+end
+saveim(4)
+
+

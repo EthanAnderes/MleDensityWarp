@@ -4,12 +4,12 @@ include("../src/targets.jl")
 using  PyCall
 @pyimport matplotlib.pyplot as plt 
 
-tmpx = [rand(50), randn(100)/10 + .8]
+tmpx = [rand(75), randn(100)/10 + .8]
 tmpy = tmpx + rand(size(tmpx)) .* 1.1
 N = length(tmpx)
 
 X = Array{Float64,1}[[(tmpx[i]- minimum(tmpx))/maximum(tmpx), (tmpy[i]-minimum(tmpy))/maximum(tmpy)] for i=1:N]
-target(x) = targetUnif2d(x; targSig = 0.1, limit = 0.35, center = 0.5) # this sets an alias to a function giving in the file targets.jl
+target(x) = targetUnif2d(x; targSig = 0.1, limit = 0.2, center = 0.7) # this sets an alias to a function giving in the file targets.jl
 kappa     = Array{Float64,1}[X[i]  for i in 1:round(N/2)]
 n_knots   = length(kappa)
 eta_coeff = Array{Float64,1}[zero(kappa[i]) for i in 1:n_knots]
@@ -63,4 +63,15 @@ for counter = 1:25
 	toc()
 end
 saveim(3)
+
+
+#  gradient ascent on kappa and eta_coeff
+lambda_sigma = [0.01, 0.1] 
+for counter = 1:25
+	tic()
+	dlkappa, dleta_coeff = get_grad(lambda_sigma, kappa, eta_coeff, X, Array{Float64,2}[eye(2) for i in 1:N])
+	eta_coeff += prodc(0.002, dleta_coeff)
+	toc()
+end
+saveim(4)
 
