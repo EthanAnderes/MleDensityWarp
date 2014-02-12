@@ -62,141 +62,106 @@ function +(yin::Flow, zin::TrFlow)
 	yout
 end 
 
-# defines + between Flow and Flow, used in ode
-function +(yin::Flow, zin::Flow) 
-	nKap = length(yin.kappa) 
-	nPhi = length(yin.phix)
-	yout = Flow(yin.dim, 0, 0) # initialize an empty Flow
-	for i = 1:nKap
-		push!(yout.kappa,     yin.kappa[i]     + zin.kappa[i]) 
-		push!(yout.eta_coeff, yin.eta_coeff[i] + zin.eta_coeff[i]) 
-	end
-	for i = 1:nPhi
-		push!(yout.phix,  zin.phix[i] + yin.phix[i])
-		push!(yout.Dphix, zin.Dphix[i]+ yin.Dphix[i]) 
-	end
-	yout
+# defines +, -, *, / between Flow and Flow, used in ode
+for opt = (:+, :-, :*, :/) 
+	@eval begin
+		function $opt(yin::Flow, zin::Flow) 
+			nKap = length(yin.kappa) 
+			nPhi = length(yin.phix)
+			yout = Flow(yin.dim, 0, 0)
+			for i = 1:nKap
+				push!(yout.kappa,     $opt(yin.kappa[i], zin.kappa[i])) 
+				push!(yout.eta_coeff, $opt(yin.eta_coeff[i], zin.eta_coeff[i])) 
+			end
+			for i = 1:nPhi
+				push!(yout.phix,  $opt(yin.phix[i],  zin.phix[i]))
+				push!(yout.Dphix, $opt(yin.Dphix[i], zin.Dphix[i])) 
+			end
+			yout
+		end # end function definition
+	end 
 end 
 
-# defines - between Flow and Flow, used in ode
-function -(yin::Flow, zin::Flow) 
-	nKap = length(yin.kappa) 
-	nPhi = length(yin.phix)
-	yout = Flow(yin.dim, 0, 0)
-	for i = 1:nKap
-		push!(yout.kappa,     yin.kappa[i]     - zin.kappa[i]) 
-		push!(yout.eta_coeff, yin.eta_coeff[i] - zin.eta_coeff[i]) 
-	end
-	for i = 1:nPhi
-		push!(yout.phix,  zin.phix[i] - yin.phix[i])
-		push!(yout.Dphix, zin.Dphix[i]- yin.Dphix[i]) 
-	end
-	yout
-end 
-
-# defines + between TrFlow and TrFlow, used in ode
-function +(yin::TrFlow, zin::TrFlow) 
-	nKap = length(yin.kappa) 
-	nPhi = length(yin.phix)
-	yout = TrFlow(yin.dim, 0, 0)
-	for i = 1:nKap
-		push!(yout.kappa,     yin.kappa[i]     + zin.kappa[i]) 
-		push!(yout.eta_coeff, yin.eta_coeff[i] + zin.eta_coeff[i]) 
-		push!(yout.dlkappa,     yin.dlkappa[i]     + zin.dlkappa[i]) 
-		push!(yout.dleta_coeff, yin.dleta_coeff[i] + zin.dleta_coeff[i]) 
-	end
-	for i = 1:nPhi
-		push!(yout.phix,  zin.phix[i] + yin.phix[i])
-		push!(yout.Dphix, zin.Dphix[i]+ yin.Dphix[i]) 
-		push!(yout.dlphix,  zin.dlphix[i] + yin.dlphix[i])
-		push!(yout.dlDphix, zin.dlDphix[i]+ yin.dlDphix[i]) 
-	end
-	yout
-end 
-
-# defines - between TrFlow and TrFlow, used in ode
-function -(yin::TrFlow, zin::TrFlow) 
-	nKap = length(yin.kappa) 
-	nPhi = length(yin.phix)
-	yout = TrFlow(yin.dim, 0, 0)
-	for i = 1:nKap
-		push!(yout.kappa,     yin.kappa[i]     - zin.kappa[i]) 
-		push!(yout.eta_coeff, yin.eta_coeff[i] - zin.eta_coeff[i]) 
-		push!(yout.dlkappa,     yin.dlkappa[i]     - zin.dlkappa[i]) 
-		push!(yout.dleta_coeff, yin.dleta_coeff[i] - zin.dleta_coeff[i]) 
-	end
-	for i = 1:nPhi
-		push!(yout.phix,  zin.phix[i] - yin.phix[i])
-		push!(yout.Dphix, zin.Dphix[i]- yin.Dphix[i]) 
-		push!(yout.dlphix,  zin.dlphix[i] - yin.dlphix[i])
-		push!(yout.dlDphix, zin.dlDphix[i]- yin.dlDphix[i]) 
-	end
-	yout
+# defines +, -, *, / between TrFlow and TrFlow, used in ode
+for opt = (:+, :-, :*, :/) 
+	@eval begin
+		function $opt(yin::TrFlow, zin::TrFlow) 
+			nKap = length(yin.kappa) 
+			nPhi = length(yin.phix)
+			yout = TrFlow(yin.dim, 0, 0)
+			for i = 1:nKap
+				push!(yout.kappa,       $opt(yin.kappa[i], zin.kappa[i]))
+				push!(yout.eta_coeff,   $opt(yin.eta_coeff[i], zin.eta_coeff[i]))
+				push!(yout.dlkappa,     $opt(yin.dlkappa[i], zin.dlkappa[i]))
+				push!(yout.dleta_coeff, $opt(yin.dleta_coeff[i], zin.dleta_coeff[i]))
+			end
+			for i = 1:nPhi
+				push!(yout.phix,   $opt(yin.phix[i], zin.phix[i]))
+				push!(yout.Dphix,  $opt(yin.Dphix[i], zin.Dphix[i]))
+				push!(yout.dlphix, $opt(yin.dlphix[i], zin.dlphix[i]))
+				push!(yout.dlDphix,$opt(yin.dlDphix[i], zin.dlDphix[i]))
+			end
+			yout
+		end # end function definition
+	end 
 end 
 
 # defines +, -, *, / between Flow and Float64
 for opt = (:+, :-, :*, :/) 
 	@eval begin
-		function ($opt)(yin::Flow, a::Real)
+		function $opt(yin::Flow, a::Real)
 			nKap = length(yin.kappa)
 			nPhi = length(yin.phix)
 			yout = Flow(yin.dim, 0, 0)
 			for i = 1:nKap
-				push!(yout.kappa, ($opt)(yin.kappa[i],a)) 
-				push!(yout.eta_coeff, ($opt)(yin.eta_coeff[i],a)) 
+				push!(yout.kappa, $opt(yin.kappa[i],a)) 
+				push!(yout.eta_coeff, $opt(yin.eta_coeff[i],a)) 
 			end
 			for i = 1:nPhi
-				push!(yout.phix, ($opt)(yin.phix[i],a))
-				push!(yout.Dphix, ($opt)(yin.Dphix[i],a)) 
+				push!(yout.phix, $opt(yin.phix[i],a))
+				push!(yout.Dphix, $opt(yin.Dphix[i],a)) 
 			end
 			yout
 		end # end function definition
-	end # end the begin block
-end # end for loop over functions
+	end 
+end 
 
-# +, -, * are associative
-for opt = (:+, :-, :*)
-	@eval ($opt)(a::Real, yin::Flow) = ($opt)(yin::Flow, a::Float64)
-end
-# ytest1 = Flow(2, 3)
-# ytest2 = ytest1 + 5.7
-# ytest3 = ytest2 * 1.7 + 4
-
-
-for opt = (:+, :-, :*, :/) # this defines +, -, *, / between TrFlow and Float64
+# defines +, -, *, / between TrFlow and Float64
+for opt = (:+, :-, :*, :/) 
 	@eval begin
-		function ($opt)(yin::TrFlow, a::Real)
+		function $opt(yin::TrFlow, a::Real)
 			nKap = length(yin.kappa)
 			nPhi = length(yin.phix)
 			yout = TrFlow(yin.dim, 0, 0)
 			for i = 1:nKap
-				push!(yout.kappa, ($opt)(yin.kappa[i],a)) 
-				push!(yout.eta_coeff, ($opt)(yin.eta_coeff[i],a)) 
-				push!(yout.dlkappa, ($opt)(yin.dlkappa[i],a)) 
-				push!(yout.dleta_coeff, ($opt)(yin.dleta_coeff[i],a)) 
+				push!(yout.kappa, $opt(yin.kappa[i],a)) 
+				push!(yout.eta_coeff, $opt(yin.eta_coeff[i],a)) 
+				push!(yout.dlkappa, $opt(yin.dlkappa[i],a)) 
+				push!(yout.dleta_coeff, $opt(yin.dleta_coeff[i],a)) 
 			end
 			for i = 1:nPhi
-				push!(yout.phix, ($opt)(yin.phix[i],a))
-				push!(yout.Dphix, ($opt)(yin.Dphix[i],a)) 
-				push!(yout.dlphix, ($opt)(yin.dlphix[i],a))
-				push!(yout.dlDphix, ($opt)(yin.dlDphix[i],a)) 
+				push!(yout.phix, $opt(yin.phix[i],a))
+				push!(yout.Dphix, $opt(yin.Dphix[i],a)) 
+				push!(yout.dlphix, $opt(yin.dlphix[i],a))
+				push!(yout.dlDphix, $opt(yin.dlDphix[i],a)) 
 			end
 			yout
 		end # end function definition
-	end # end the begin block
-end # end for loop over functions
+	end 
+end 
 
-# +, -, * are associative
+# +, -, * are associative for both Flow and TrFlow
 for opt = (:+, :-, :*)
-	@eval ($opt)(a::Real, yin::TrFlow) = ($opt)(yin::TrFlow, a::Float64)
+	@eval $opt{T<:Union(Flow, TrFlow)}(a::Real, yin::T) = $opt(yin, a)
 end
 
 
-# these are used in ode code
+# used in ode
 function norm_inf_any{D}(y::Array{Float64,D})
     norm(y,Inf)
 end
 
+# used in ode
 function norm_inf_any(y::Flow)
     nKap = length(y.kappa)
     nPhi = length(y.phix)
@@ -212,6 +177,7 @@ function norm_inf_any(y::Flow)
     m
 end
 
+# used in ode
 function norm_inf_any(y::TrFlow)
     nKap = length(y.kappa)
     nPhi = length(y.phix)

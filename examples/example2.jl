@@ -23,7 +23,7 @@ y0 = Flow(kappa, array1(dim, nKap), X, array2eye(dim, nPhi), dim)
 
 # function to save images
 function saveim(fignum)
-	x_grd, y_grd =  meshgrid(linspace(-0.1, 1.1, 200),linspace(-0.1, 1.1, 200))   
+	x_grd, y_grd =  meshgrid(linspace(-0.1, 1.1, 100),linspace(-0.1, 1.1, 100))   
 	N_grd = length(x_grd)
 	phix_grd_0  = Array{Float64,1}[[x_grd[i], y_grd[i]] for i=1:N_grd]
 	Dphix_grd_0 = Array{Float64,2}[eye(2) for i in 1:N_grd]
