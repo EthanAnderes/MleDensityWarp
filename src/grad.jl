@@ -1,13 +1,12 @@
 
 function get_grad(y0::Flow, lambda, sigma)
-    
-    dydt(t,y)= d_forward_dt(y, sigma)
-    (t1,y1)=ode23_abstract_end(dydt,[0,1],y0) # Flow y0 forward to time 1
+    dydt(t,y) = d_forward_dt(y, sigma)
+    (t1,y1) = ode23_abstract_end(dydt, [0,1], y0) # Flow y0 forward to time 1
     
     z1 = TrFlow(y1, target) # Initalize the transpose flow at time 1
    
-    dzdt(t,z)=d_backward_dt(z, sigma)
-    (t0,z0)=ode23_abstract_end(dzdt,[0,1],z1) # Flow z1 backward from time 1 to 0 
+    dzdt(t,z) = d_backward_dt(z, sigma)
+    (t0,z0) = ode23_abstract_end(dzdt, [0,1], z1) # Flow z1 backward from time 1 to 0 
 
     # add the regularization
     nKap = length(y0.kappa)
@@ -19,7 +18,6 @@ function get_grad(y0::Flow, lambda, sigma)
     for i = 1:nKap 
         z0.dlkappa[i] = 0.0 * z0.dlkappa[i]
     end
-
     z0 # return the TrFlow
 end
 
@@ -28,21 +26,15 @@ end
 function d_forward_dt(yin::Flow, sigma)
     nKap = length(yin.kappa)
     nPhi = length(yin.phix)
-    yout = Flow(yin.dim, nKap, nPhi)
-    # eta
+    yout = Flow(yin.dim, nKap, nPhi) # intialize the return Flow
+    # eta and kappa
     for i = 1:nKap, j = 1:nKap 
         yout.eta_coeff[i] -= dot(yin.eta_coeff[i], yin.eta_coeff[j]) * gradR(yin.kappa[i], yin.kappa[j], sigma) 
-    end
-    # kappa
-    for i = 1:nKap, j = 1:nKap
         yout.kappa[i] += yin.eta_coeff[j] * R(yin.kappa[i], yin.kappa[j], sigma) 
     end
     # phi
     for i = 1:nPhi, j = 1:nKap 
         yout.phix[i] += yin.eta_coeff[j] * R(yin.phix[i], yin.kappa[j], sigma) 
-    end
-    # Dphi
-    for i = 1:nPhi, j = 1:nKap 
         yout.Dphix[i] += yin.eta_coeff[j] * transpose(gradR(yin.phix[i], yin.kappa[j], sigma)) * yin.Dphix[i]
     end
     yout
@@ -54,31 +46,25 @@ function d_backward_dt(yin::TrFlow, sigma)
     nKap = length(yin.kappa)
     nPhi = length(yin.phix)
     yout = TrFlow(yin.dim, nKap, nPhi)
-    # eta
+    # the following are re-used 
+    # gradRkk = Array{Float64,1}[gradR(yin.kappa[i], yin.kappa[j],sigma) for i = 1:nKap, j = 1:nKap]
+    # gradRpk = Array{Float64,1}[gradR(yin.phix[i], yin.kappa[j],sigma) for i = 1:nPhi, j = 1:nKap]
+    # eta and kappa
     for i = 1:nKap, j = 1:nKap 
         yout.eta_coeff[i] += dot(yin.eta_coeff[i], yin.eta_coeff[j]) * gradR(yin.kappa[i], yin.kappa[j], sigma) 
-    end
-    # kappa
-    for i = 1:nKap, j = 1:nKap
         yout.kappa[i] -= yin.eta_coeff[j] * R(yin.kappa[i], yin.kappa[j], sigma) 
     end
-    # phi
+    # phi and Dphi
     for i = 1:nPhi, j = 1:nKap 
         yout.phix[i] -= yin.eta_coeff[j] * R(yin.phix[i], yin.kappa[j], sigma) 
-    end
-    # Dphi
-    for i = 1:nPhi, j = 1:nKap 
         yout.Dphix[i] -= yin.eta_coeff[j] * transpose(gradR(yin.phix[i], yin.kappa[j], sigma)) * yin.Dphix[i]
     end
-    # dlDphix
-    for col = 1:yin.dim, i = 1:nPhi, j = 1:nKap
-        yout.dlDphix[i][:,col] +=  gradR(yin.phix[i], yin.kappa[j], sigma) * transpose(yin.eta_coeff[j]) * yin.dlDphix[i][:,col]
-    end
-    # dlphix
+    # dlphix and dlDphix
     for i = 1:nPhi, j = 1:nKap
         yout.dlphix[i] += gradR(yin.phix[i], yin.kappa[j],sigma) * transpose(yin.eta_coeff[j]) * yin.dlphix[i]
         for col = 1:yin.dim
             yout.dlphix[i] +=  g1g1R(yin.phix[i], yin.kappa[j], sigma) * yin.Dphix[i][:,col] * transpose(yin.eta_coeff[j]) * yin.dlDphix[i][:,col]
+            yout.dlDphix[i][:,col] +=  gradR(yin.phix[i], yin.kappa[j], sigma) * transpose(yin.eta_coeff[j]) * yin.dlDphix[i][:,col]
         end
     end
     # dlkappa
@@ -87,25 +73,18 @@ function d_backward_dt(yin::TrFlow, sigma)
         yout.dlkappa[i] -= dot(yin.eta_coeff[i], yin.eta_coeff[j]) .* (g1g2R(yin.kappa[j], yin.kappa[i], sigma) * yin.dleta_coeff[j])
         yout.dlkappa[i] += gradR(yin.kappa[i], yin.kappa[j],sigma) * transpose(yin.eta_coeff[j]) * yin.dlkappa[i]
         yout.dlkappa[i] -= gradR(yin.kappa[j], yin.kappa[i],sigma) * transpose(yin.eta_coeff[i]) * yin.dlkappa[j]
-    end
-    for i = 1:nKap, j = 1:nPhi
-        yout.dlkappa[i] -= gradR(yin.phix[j], yin.kappa[i], sigma) * transpose(yin.eta_coeff[i]) * yin.dlphix[j]
-        for col = 1:yin.dim
-            yout.dlkappa[i] += g1g2R(yin.phix[j], yin.kappa[i],sigma) * yin.Dphix[j][:,col] * transpose(yin.eta_coeff[i]) * yin.dlDphix[j][:,col]
-        end
-    end 
-    # dleta_coeff
-    for i = 1:nKap, j = 1:nKap
         yout.dleta_coeff[i] -= yin.eta_coeff[j] * transpose(gradR(yin.kappa[i], yin.kappa[j], sigma)) * yin.dleta_coeff[i]
         yout.dleta_coeff[i] -= yin.eta_coeff[j] * transpose(gradR(yin.kappa[j], yin.kappa[i], sigma)) * yin.dleta_coeff[j]
         yout.dleta_coeff[i] += R(yin.kappa[j], yin.kappa[i], sigma) * yin.dlkappa[j]
     end
     for i = 1:nKap, j = 1:nPhi
+        yout.dlkappa[i] -= gradR(yin.phix[j], yin.kappa[i], sigma) * transpose(yin.eta_coeff[i]) * yin.dlphix[j]
         yout.dleta_coeff[i] += R(yin.phix[j], yin.kappa[i], sigma) * yin.dlphix[j]
         for col = 1:yin.dim
+            yout.dlkappa[i] += g1g2R(yin.phix[j], yin.kappa[i],sigma) * yin.Dphix[j][:,col] * transpose(yin.eta_coeff[i]) * yin.dlDphix[j][:,col]
             yout.dleta_coeff[i] += dot(yin.Dphix[j][:,col], gradR(yin.phix[j], yin.kappa[i],sigma)) * yin.dlDphix[j][:,col]
         end
-    end
+    end 
     yout
 end
 

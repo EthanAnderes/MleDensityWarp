@@ -31,33 +31,30 @@ end
 # zero Flow constructor
 Flow(dim, nKap, nPhi) = Flow(array1(dim, nKap), array1(dim, nKap), array1(dim, nPhi), array2(dim, nPhi), dim) 
 
-# take a traspose flow, extract the dl's and convert to Flow (used to update the gradiet)
-dFlow(z::TrFlow) = Flow(z.dlkappa, z.dleta_coeff, z.dlphix, z.dlDphix, z.dim)
-
 # zero TrFlow constructor
 TrFlow(dim, nKap, nPhi) = TrFlow(array1(dim, nKap), array1(dim, nKap), array1(dim, nPhi), array2(dim, nPhi), array1(dim, nKap), array1(dim, nKap), array1(dim, nPhi), array2(dim, nPhi), dim) # zero Flow constructor
 
-# this is used to initialize the transpose flow at time 1 of a grad computation 
+# this is used to initialize the transpose flow at time 1 in get_grad 
 function TrFlow(yin::Flow, target::Function)
 	nKap = length(yin.kappa)
 	nPhi = length(yin.phix)
 	dleta_coeff = array1(yin.dim, nKap)
 	dlkappa     = array1(yin.dim, nKap)
-    dlphix      = Array{Float64,1}[target(yin.phix)[2][i]/nPhi for i = 1:nPhi]
-    dlDphix     = Array{Float64,2}[inv(yin.Dphix[i])/nPhi for i = 1:nPhi]
+	dlphix      = Array{Float64,1}[target(yin.phix)[2][i]/nPhi for i = 1:nPhi]
+	dlDphix     = Array{Float64,2}[inv(yin.Dphix[i])/nPhi for i = 1:nPhi]
 	TrFlow(yin.kappa, yin.eta_coeff, yin.phix, yin.Dphix, dlkappa, dleta_coeff, dlphix, dlDphix, yin.dim)
 end
 
 # defines + between Flow and TrFlow... used to update with  the return value of get_grad
 function +(yin::Flow, zin::TrFlow) 
-	nKap = length(yin.kappa) # I don't check that zin has same dims
+	nKap = length(yin.kappa) # TODO: thro an error if dims don't match
 	nPhi = length(yin.phix)
-	yout = Flow(yin.dim, 0, 0) # return a Flow
+	yout = Flow(yin.dim, 0, 0) # initialize an empty Flow
 	for i = 1:nKap
 		push!(yout.kappa,     yin.kappa[i]     + zin.dlkappa[i]) 
 		push!(yout.eta_coeff, yin.eta_coeff[i] + zin.dleta_coeff[i]) 
 	end
-	# we don't need to update these from TrFlow
+	# phix and Dphix don't get updated from TrFlow
 	for i = 1:nPhi
 		push!(yout.phix,   yin.phix[i])
 		push!(yout.Dphix,  yin.Dphix[i]) 
@@ -69,7 +66,7 @@ end
 function +(yin::Flow, zin::Flow) 
 	nKap = length(yin.kappa) 
 	nPhi = length(yin.phix)
-	yout = Flow(yin.dim, 0, 0)
+	yout = Flow(yin.dim, 0, 0) # initialize an empty Flow
 	for i = 1:nKap
 		push!(yout.kappa,     yin.kappa[i]     + zin.kappa[i]) 
 		push!(yout.eta_coeff, yin.eta_coeff[i] + zin.eta_coeff[i]) 
