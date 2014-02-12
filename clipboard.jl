@@ -485,3 +485,179 @@ y=[1.0, 2.2]
 
 
 
+#---------------------
+# I want to test the impact of  the type conversion
+# ------------------------
+
+include("src/rfuncs.jl")
+typealias Array1 Array{Array{Float64,1},1} # for lists of vectors
+typealias Array2 Array{Array{Float64,2},1} # for lists of jacobians
+array1(dim, k) = Array{Float64,1}[zeros(dim) for i=1:k] # constructor for Array1
+array2(dim, k) = Array{Float64,2}[zeros(dim, dim) for i=1:k] # constructor for Array2
+array2eye(dim, k) = Array{Float64,2}[eye(dim) for i=1:k] # constructor for Array2
+immutable Flow
+	kappa::Array1
+	eta_coeff::Array1
+	phix::Array1
+	Dphix::Array2
+	dim::Int64	
+end
+Flow(dim::Int64, k) = Flow(array1(dim, k), array1(dim, k), array1(dim, k), array2(dim, k), dim) # zero Flow constructor
+for opt = (:+, :-, :*) # this defines +, - and * between Flow and Float64
+	@eval begin
+		function ($opt)(yin::Flow, a::Real)
+			nKap = length(yin.kappa)
+			nPhi = length(yin.phix)
+			yout = Flow(yin.dim, 0)
+			for i = 1:nKap
+				push!(yout.kappa, ($opt)(a,yin.kappa[i])) 
+				push!(yout.eta_coeff, ($opt)(a,yin.eta_coeff[i])) 
+			end
+			for i = 1:nPhi
+				push!(yout.phix, ($opt)(a,yin.phix[i]))
+				push!(yout.Dphix, ($opt)(a,yin.Dphix[i])) 
+			end
+			yout
+		end # end function definition
+	end # end the begin block
+	@eval ($opt)(a::Real, yin::Flow) = ($opt)(yin::Flow, a::Float64)
+end # end for loop over functions
+# ytest1 = Flow(2, 3)
+# ytest2 = ytest1 + 5.7
+# ytest3 = ytest2 * 1.7 + 4
+function d_forward_dt(yin::Flow, sigma)
+	nKap = length(yin.kappa)
+	nPhi = length(yin.phix)
+	yout = Flow(yin.dim, nKap)
+	# eta
+	for i = 1:nKap, j = 1:nKap 
+		yout.eta_coeff[i] -= dot(yin.eta_coeff[i], yin.eta_coeff[j]) * gradR(yin.kappa[i], yin.kappa[j], sigma) 
+	end
+	# kappa
+	for i = 1:nKap, j = 1:nKap
+		yout.kappa[i] += yin.eta_coeff[j] * R(yin.kappa[i], yin.kappa[j], sigma) 
+	end
+	# phi
+	for i = 1:nPhi, j = 1:nKap 
+		yout.phix[i] += yin.eta_coeff[j] * R(yin.phix[i], yin.kappa[j], sigma) 
+	end
+	# Dphi
+	for i = 1:nPhi, j = 1:nKap 
+		yout.Dphix[i] += yin.eta_coeff[j] * transpose(gradR(yin.phix[i], yin.kappa[j], sigma)) * yin.Dphix[i]
+	end
+	yout
+end
+
+#transpose
+immutable TrFlow
+	kappa::Array1
+	eta_coeff::Array1
+	phix::Array1
+	Dphix::Array2
+	dlkappa::Array1
+	dleta_coeff::Array1
+	dlphix::Array1
+	dlDphix::Array2
+	dim::Int64	
+end
+
+TrFlow(dim::Int64, k) = TrFlow(array1(dim, k), array1(dim, k), array1(dim, k), array2(dim, k), array1(dim, k), array1(dim, k), array1(dim, k), array2(dim, k), dim) # zero Flow constructor
+
+for opt = (:+, :-, :*) # this defines +, - and * between Flow and Float64
+	@eval begin
+		function ($opt)(yin::TrFlow, a::Real)
+			nKap = length(yin.kappa)
+			nPhi = length(yin.phix)
+			yout = TrFlow(yin.dim, 0)
+			for i = 1:nKap
+				push!(yout.kappa, ($opt)(a,yin.kappa[i])) 
+				push!(yout.eta_coeff, ($opt)(a,yin.eta_coeff[i])) 
+				push!(yout.dlkappa, ($opt)(a,yin.dlkappa[i])) 
+				push!(yout.dleta_coeff, ($opt)(a,yin.dleta_coeff[i])) 
+			end
+			for i = 1:nPhi
+				push!(yout.phix, ($opt)(a,yin.phix[i]))
+				push!(yout.Dphix, ($opt)(a,yin.Dphix[i])) 
+				push!(yout.dlphix, ($opt)(a,yin.dlphix[i]))
+				push!(yout.dlDphix, ($opt)(a,yin.dlDphix[i])) 
+			end
+			yout
+		end # end function definition
+	end # end the begin block
+	@eval ($opt)(a::Real, yin::Flow) = ($opt)(yin::Flow, a::Float64)
+end # end for loop over functions
+
+function d_backward_dt(yin::TrFlow, sigma)
+	nKap = length(yin.kappa)
+	nPhi = length(yin.phix)
+	yout = TrFlow(yin.dim, nKap)
+	# eta
+	for i = 1:nKap, j = 1:nKap 
+		yout.eta_coeff[i] += dot(yin.eta_coeff[i], yin.eta_coeff[j]) * gradR(yin.kappa[i], yin.kappa[j], sigma) 
+	end
+	# kappa
+	for i = 1:nKap, j = 1:nKap
+		yout.kappa[i] -= yin.eta_coeff[j] * R(yin.kappa[i], yin.kappa[j], sigma) 
+	end
+	# phi
+	for i = 1:nPhi, j = 1:nKap 
+		yout.phix[i] -= yin.eta_coeff[j] * R(yin.phix[i], yin.kappa[j], sigma) 
+	end
+	# Dphi
+	for i = 1:nPhi, j = 1:nKap 
+		yout.Dphix[i] -= yin.eta_coeff[j] * transpose(gradR(yin.phix[i], yin.kappa[j], sigma)) * yin.Dphix[i]
+	end
+	# dlDphix
+	for col = 1:yin.dim, i = 1:nPhi, j = 1:nKap
+		yout.dlDphix[i][:,col] +=  gradR(yin.phix[i], yin.kappa[j], sigma) * transpose(yin.eta_coeff[j]) * yin.dlDphix[i][:,col]
+	end
+	# dlphix
+	for i = 1:nPhi, j = 1:nKap
+		yout.dlphix[i] += gradR(yin.phix[i], yin.kappa[j],sigma) * transpose(yin.eta_coeff[j]) * yin.dlphix[i]
+		for col = 1:yin.dim
+			yout.dlphix[i] +=  g1g1R(yin.phix[i], yin.kappa[j], sigma) * yin.Dphix[i][:,col] * transpose(yin.eta_coeff[j]) * yin.dlDphix[i][:,col]
+		end
+	end
+	# dlkappa
+	for i = 1:nKap, j = 1:nKap
+		yout.dlkappa[i] -= dot(yin.eta_coeff[i], yin.eta_coeff[j]) .* (g1g1R(yin.kappa[i], yin.kappa[j], sigma) * yin.dleta_coeff[i])
+		yout.dlkappa[i] -= dot(yin.eta_coeff[i], yin.eta_coeff[j]) .* (g1g2R(yin.kappa[j], yin.kappa[i], sigma) * yin.dleta_coeff[j])
+		yout.dlkappa[i] += gradR(yin.kappa[i], yin.kappa[j],sigma) * transpose(yin.eta_coeff[j]) * yin.dlkappa[i]
+		yout.dlkappa[i] -= gradR(yin.kappa[j], yin.kappa[i],sigma) * transpose(yin.eta_coeff[i]) * yin.dlkappa[j]
+	end
+	for i = 1:nKap, j = 1:nPhi
+		yout.dlkappa[i] -= gradR(yin.phix[j], yin.kappa[i], sigma) * transpose(yin.eta_coeff[i]) * yin.dlphix[j]
+		for col = 1:yin.dim
+			yout.dlkappa[i] += g1g2R(yin.phix[j], yin.kappa[i],sigma) * yin.Dphix[j][:,col] * transpose(yin.eta_coeff[i]) * yin.dlDphix[j][:,col]
+		end
+	end 
+	# dleta_coeff
+	for i = 1:nKap, j = 1:nKap
+		yout.dleta_coeff[i] -= yin.eta_coeff[j] * transpose(gradR(yin.kappa[i], yin.kappa[j], sigma)) * yin.dleta_coeff[i]
+		yout.dleta_coeff[i] -= yin.eta_coeff[j] * transpose(gradR(yin.kappa[j], yin.kappa[i], sigma)) * yin.dleta_coeff[j]
+		yout.dleta_coeff[i] += R(yin.kappa[j], yin.kappa[i], sigma) * yin.dlkappa[j]
+	end
+	for i = 1:nKap, j = 1:nPhi
+		yout.dleta_coeff[i] += R(yin.phix[j], yin.kappa[i], sigma) * yin.dlphix[j]
+		for col = 1:yin.dim
+			yout.dleta_coeff[i] += dot(yin.Dphix[j][:,col], gradR(yin.phix[j], yin.kappa[i],sigma)) * yin.dlDphix[j][:,col]
+		end
+	end
+	yout
+end
+
+
+
+
+tmpx = [rand(50), randn(75)/10.0 + .8]; tmpy = tmpx + rand(size(tmpx)) .* 1.1; nKap = length(tmpx)
+X = Array{Float64,1}[[tmpx[i]-mean(tmpx), tmpy[i]-mean(tmpy)] for i=1:nKap]
+
+dim = length(X[1])
+yFlow = Flow(deepcopy(X), array1(dim,nKap), deepcopy(X), array2(dim,nKap), dim)
+yTrFlow = TrFlow(deepcopy(X), array1(dim,nKap), deepcopy(X), array2(dim,nKap), deepcopy(X), array1(dim,nKap), deepcopy(X), array2(dim,nKap), dim)
+
+
+@time d_forward_dt(yFlow, 1.0);
+@time d_backward_dt(yTrFlow, 1.0);
+
+
