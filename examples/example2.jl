@@ -6,11 +6,11 @@ using  PyCall
 
 # set the data and the target
 dim = 2
-tmpx = [rand(75), randn(100)/10 + .8]
+tmpx = [rand(50), randn(80)/10 + .8]
 tmpy = tmpx + rand(size(tmpx)) .* 1.1
 nPhi = length(tmpx)
 X = Array{Float64,1}[[(tmpx[i]- minimum(tmpx))/maximum(tmpx), (tmpy[i]-minimum(tmpy))/maximum(tmpy)] for i=1:nPhi]
-target(x) = targetUnif2d(x; targSig = 0.1, limit = 0.2, center = 0.7)
+target(x) = targetUnif2d(x; targSig = 0.1, limit = 0.4, center = 0.5)
 
 # generate Flow object
 kappa     = Array{Float64,1}[X[i]  for i in 1:round(nPhi)]
