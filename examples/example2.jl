@@ -13,9 +13,9 @@ X = Array{Float64,1}[[(tmpx[i]- minimum(tmpx))/maximum(tmpx), (tmpy[i]-minimum(t
 target(x) = targetUnif2d(x; targSig = 0.1, limit = 0.4, center = 0.5)
 
 # generate Flow object
-kappa     = Array{Float64,1}[X[i]  for i in 1:round(nPhi)]
-x_grd_kns, y_grd_kns =  meshgrid(linspace(-1.0,1.0, 10),linspace(-1.0,1.0, 10))
-append!(kappa, Array{Float64,1}[ [x_grd_kns[i], y_grd_kns[i]] for i in 1:length(x_grd_kns)])
+kappa     = Array{Float64,1}[X[i]  for i in 1:round(nPhi/4)]
+# x_grd_kns, y_grd_kns =  meshgrid(linspace(-1.0,1.0, 10),linspace(-1.0,1.0, 10))
+# append!(kappa, Array{Float64,1}[ [x_grd_kns[i], y_grd_kns[i]] for i in 1:length(x_grd_kns)])
 nKap   = length(kappa)
 
 y0 = Flow(kappa, array1(dim, nKap), X, array2eye(dim, nPhi), dim) 
@@ -23,7 +23,7 @@ y0 = Flow(kappa, array1(dim, nKap), X, array2eye(dim, nPhi), dim)
 
 # function to save images
 function saveim(fignum)
-	x_grd, y_grd =  meshgrid(linspace(-0.1, 1.1, 100),linspace(-0.1, 1.1, 100))   
+	x_grd, y_grd =  meshgrid(linspace(-0.1, 1.1, 50),linspace(-0.1, 1.1, 50))   
 	N_grd = length(x_grd)
 	phix_grd_0  = Array{Float64,1}[[x_grd[i], y_grd[i]] for i=1:N_grd]
 	Dphix_grd_0 = Array{Float64,2}[eye(2) for i in 1:N_grd]

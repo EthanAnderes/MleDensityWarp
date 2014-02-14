@@ -13,7 +13,7 @@ target(x) = targetUnif1d(x; targSig = 0.1, limit = 0.35, center = 0.5) # this se
 
 
 # generate Flow object
-kappa     = Array{Float64,1}[X[i]  for i in 1:round(nPhi)]
+kappa     = Array{Float64,1}[X[i]  for i in 1:round(nPhi/4)]
 nKap   = length(kappa)
 y0 = Flow(kappa, array1(dim, nKap), X, array2eye(dim, nPhi), dim) 
 

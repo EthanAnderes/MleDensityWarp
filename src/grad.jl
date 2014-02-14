@@ -12,11 +12,7 @@ function get_grad(y0::Flow, lambda, sigma)
     nKap = length(y0.kappa)
     for i = 1:nKap, j = 1:nKap 
         z0.dleta_coeff[i] -= lambda * y0.eta_coeff[j] * R(y0.kappa[i], y0.kappa[j], sigma) 
-    end
-    # The next for loop is where we should add the kappa regularization.
-    # Since we haven't programed it, I'm setting the kappa updates to zero.
-    for i = 1:nKap 
-        z0.dlkappa[i] = 0.0 * z0.dlkappa[i]
+        z0.dlkappa[i]     -= lambda * dot(y0.eta_coeff[i], y0.eta_coeff[j]) * gradR(y0.kappa[i], y0.kappa[j], sigma) 
     end
     z0 # return the TrFlow
 end
@@ -52,6 +48,8 @@ function d_backward_dt(yin::TrFlow, sigma)
     gradRpk = Array{Float64,1}[gradR(yin.phix[i], yin.kappa[j],sigma) for i = 1:nPhi, j = 1:nKap]
     Rkk = Float64[R(yin.kappa[i], yin.kappa[j],sigma) for i = 1:nKap, j = 1:nKap]
     Rpk = Float64[R(yin.phix[i], yin.kappa[j],sigma) for i = 1:nPhi, j = 1:nKap]
+    g1g2Rkkdl = Array{Float64,1}[g1g2R(yin.kappa[i],yin.kappa[j], sigma)*yin.dleta_coeff[i] for i = 1:nKap, j = 1:nKap]# note g1g1Rkk = - g1g2Rkk
+    g1g1RpkD  = Array{Float64,1}[g1g1R(yin.phix[i],yin.kappa[j],sigma)*yin.Dphix[i][:,col]*transpose(yin.eta_coeff[j])*yin.dlDphix[i][:,col]  for i = 1:nPhi, j = 1:nKap, col = 1:yin.dim]
 
     # eta and kappa
     for i = 1:nKap, j = 1:nKap 
@@ -67,14 +65,14 @@ function d_backward_dt(yin::TrFlow, sigma)
     for i = 1:nPhi, j = 1:nKap
         yout.dlphix[i] += gradRpk[i,j] * transpose(yin.eta_coeff[j]) * yin.dlphix[i]
         for col = 1:yin.dim
-            yout.dlphix[i] +=  g1g1R(yin.phix[i], yin.kappa[j], sigma) * yin.Dphix[i][:,col] * transpose(yin.eta_coeff[j]) * yin.dlDphix[i][:,col]
+            yout.dlphix[i] +=  g1g1RpkD[i,j,col] #g1g1R(yin.phix[i], yin.kappa[j], sigma) * yin.Dphix[i][:,col] * transpose(yin.eta_coeff[j]) * yin.dlDphix[i][:,col]
             yout.dlDphix[i][:,col] +=  gradRpk[i,j] * transpose(yin.eta_coeff[j]) * yin.dlDphix[i][:,col]
         end
     end
     # dlkappa
     for i = 1:nKap, j = 1:nKap
-        yout.dlkappa[i] -= dot(yin.eta_coeff[i], yin.eta_coeff[j]) .* (g1g1R(yin.kappa[i], yin.kappa[j], sigma) * yin.dleta_coeff[i])
-        yout.dlkappa[i] -= dot(yin.eta_coeff[i], yin.eta_coeff[j]) .* (g1g2R(yin.kappa[j], yin.kappa[i], sigma) * yin.dleta_coeff[j])
+        yout.dlkappa[i] += dot(yin.eta_coeff[i], yin.eta_coeff[j]) .* g1g2Rkkdl[i,j] #(g1g1R(yin.kappa[i], yin.kappa[j], sigma) * yin.dleta_coeff[i])
+        yout.dlkappa[i] -= dot(yin.eta_coeff[i], yin.eta_coeff[j]) .* g1g2Rkkdl[j,i] #(g1g2R(yin.kappa[j], yin.kappa[i], sigma) * yin.dleta_coeff[j])
         yout.dlkappa[i] += gradRkk[i,j] * transpose(yin.eta_coeff[j]) * yin.dlkappa[i]
         yout.dlkappa[i] -= gradRkk[j,i] * transpose(yin.eta_coeff[i]) * yin.dlkappa[j]
         yout.dleta_coeff[i] -= yin.eta_coeff[j] * transpose(gradRkk[i,j]) * yin.dleta_coeff[i]
@@ -85,7 +83,7 @@ function d_backward_dt(yin::TrFlow, sigma)
         yout.dlkappa[i] -= gradRpk[j,i] * transpose(yin.eta_coeff[i]) * yin.dlphix[j]
         yout.dleta_coeff[i] += Rpk[j,i] * yin.dlphix[j]
         for col = 1:yin.dim
-            yout.dlkappa[i] += g1g2R(yin.phix[j], yin.kappa[i],sigma) * yin.Dphix[j][:,col] * transpose(yin.eta_coeff[i]) * yin.dlDphix[j][:,col]
+            yout.dlkappa[i] -= g1g1RpkD[j,i,col] # -g1g2R(yin.phix[j], yin.kappa[i],sigma) * yin.Dphix[j][:,col] * transpose(yin.eta_coeff[i]) * yin.dlDphix[j][:,col]
             yout.dleta_coeff[i] += dot(yin.Dphix[j][:,col], gradRpk[j,i]) * yin.dlDphix[j][:,col]
         end
     end 
@@ -95,8 +93,8 @@ end
 
 
 function ode23_abstract_end(F::Function, tspan::AbstractVector, y0)
-    rtol = 1.e-5
-    atol = 1.e-8
+    rtol = 1.e-4
+    atol = 1.e-6
     threshold = atol / rtol
 
     t = tspan[1]
@@ -122,15 +120,14 @@ function ode23_abstract_end(F::Function, tspan::AbstractVector, y0)
         end
 
         # Attempt a step.
-        s2 = F(t+h/2.0, y+h/2.0*s1)
-        s3 = F(t+3.0*h/4.0, y+3.0*h/4.0*s2)
+        s2 = F(t+h/2.0, y+(h/2.0)*s1)
+        s3 = F(t+3.0*h/4.0, y + (3.0*h/4.0)*s2)
         tnew = t + h
-        ynew = y + h*(2.0*s1 + 3.0*s2 + 4.0*s3)/9.0
+        ynew = y + (h*2.0/9.0)*s1 + (h*3.0/9.0)*s2 + (h*4.0/9.0)*s3
         s4 = F(tnew, ynew)
 
         # Estimate the error.
-        e = h*(-5.0*s1 + 6.0*s2 + 8.0*s3 - 9.0*s4)/72.0
-        ##err = norm(e./max(max(abs(y), abs(ynew)), threshold), Inf) + realmin()
+        e = (-h*5.0/72.0)*s1 + (h*6.0/72.0)*s2 + (h*8.0/72.0)*s3 + (-h*9.0/72.0)*s4
         err = norm_inf_any(e)/max(max(norm_inf_any(y), norm_inf_any(ynew)), threshold) + realmin()
         # Accept the solution if the estimated error is less than the tolerance.
         if err <= rtol
@@ -198,7 +195,7 @@ function g1g2R(x, y, sigma)
     end
 end
 
-g1g1R(x, y,sigma) = -g1g2R(x,y,sigma)
+g1g1R(x, y,sigma) = -g1g2R(x, y,sigma)
 
 
 #------------------------------------

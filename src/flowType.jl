@@ -150,10 +150,13 @@ for opt = (:+, :-, :*, :/)
 	end 
 end 
 
-# +, -, * are associative for both Flow and TrFlow
-for opt = (:+, :-, :*)
+# +, * are associative for both Flow and TrFlow
+for opt = (:+, :*)
 	@eval $opt{T<:Union(Flow, TrFlow)}(a::Real, yin::T) = $opt(yin, a)
 end
+
+-{T<:Union(Flow, TrFlow)}(a::Real, yin::T) = -1.0 * -(yin, a)
+
 
 
 # used in ode
