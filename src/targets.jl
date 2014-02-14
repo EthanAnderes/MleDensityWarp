@@ -39,27 +39,27 @@ end
 #------------------------------------
 #  Normal Targets
 #--------------------------------------------
-function targetNormal1d(kappa::Array{Array{Float64,1},1})
-	targsig = 1.0
+function targetNormal1d(kappa::Array{Array{Float64,1},1}; targSig = 0.1, center = 0.0)
+	density = Float64[]
 	density = Float64[]
 	gradH   = Array{Float64,1}[]
 	for k = 1:length(kappa)
-		push!(density, exp(- kappa[k][1] .* kappa[k][1] / (2.0 * targsig * targsig)  ) / (sqrt(2.0 * pi) * targsig) )
-		push!(gradH,[-kappa[k][1]/ (targsig * targsig)]) 
+		push!(density, exp(- (kappa[k][1] - center).^2 / (2.0 *targSig^2) ) / (sqrt(2.0*pi) * targSig) )
+		push!(gradH,[-(kappa[k][1]-center)/(targSig^2)]) 
 	end
 	density, gradH
 end
-function targetNormal2d(kappa::Array{Array{Float64,1},1})
+function targetNormal2d(kappa::Array{Array{Float64,1},1}; targSig = 0.1, center = [0.0,0.0])
 	N = length(kappa)
-	densitx, gradHx = targetNormal1d(Array{Float64,1}[[kappa[i][1]] for i=1:N] )
-	density, gradHy = targetNormal1d(Array{Float64,1}[[kappa[i][2]] for i=1:N] )
+	densitx, gradHx = targetNormal1d(Array{Float64,1}[[kappa[i][1]] for i=1:N], targSig = targSig, center = center[1])
+	density, gradHy = targetNormal1d(Array{Float64,1}[[kappa[i][2]] for i=1:N], targSig = targSig, center = center[2])
 	densitx .* density, Array{Float64,1}[[gradHx[i][1], gradHy[i][1]] for i=1:N]
 end 
-function targetNormal3d(kappa::Array{Array{Float64,1},1})
+function targetNormal3d(kappa::Array{Array{Float64,1},1}; targSig = 0.1, center = [0.0,0.0,0.0])
 	N = length(kappa)
-	densitx, gradHx = targetNormal1d(Array{Float64,1}[[kappa[i][1]] for i=1:N] )
-	density, gradHy = targetNormal1d(Array{Float64,1}[[kappa[i][2]] for i=1:N] )
-	densitz, gradHz = targetNormal1d(Array{Float64,1}[[kappa[i][2]] for i=1:N] )
+	densitx, gradHx = targetNormal1d(Array{Float64,1}[[kappa[i][1]] for i=1:N], targSig = targSig, center = center[1])
+	density, gradHy = targetNormal1d(Array{Float64,1}[[kappa[i][2]] for i=1:N], targSig = targSig, center = center[2])
+	densitz, gradHz = targetNormal1d(Array{Float64,1}[[kappa[i][2]] for i=1:N], targSig = targSig, center = center[3])
 	densitx .* density .* densitz, Array{Float64,1}[[gradHx[i][1], gradHy[i][1], gradHz[i][1]] for i=1:N]
 end 
 

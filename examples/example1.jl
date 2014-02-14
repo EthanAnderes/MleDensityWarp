@@ -6,7 +6,7 @@ using  PyCall
 
 # set the data and the target
 dim = 1
-tmpx = [rand(45), randn(75)/10 + .8]
+tmpx = shuffle([rand(45), randn(175)/10 + .8])
 nPhi = length(tmpx)
 X = Array{Float64,1}[[(tmpx[i]- minimum(tmpx))/maximum(tmpx)] for i=1:nPhi]
 target(x) = targetUnif1d(x; targSig = 0.1, limit = 0.35, center = 0.5) # this sets an alias to a function giving in the file targets.jl
@@ -41,7 +41,7 @@ end
 
 #  gradient ascent on eta_coeff
 lambda, sigma = 1.0, 0.1 
-for counter = 1:10
+for counter = 1:35
 	tic()
 	z0 = get_grad(y0, lambda, sigma)
 	y0 = y0 + 0.002 * z0
@@ -51,8 +51,8 @@ saveim(1)
 
 
 #  gradient ascent on eta_coeff
-lambda, sigma = 0.1, 0.1 
-for counter = 1:10
+lambda, sigma = 0.1, 0.05 
+for counter = 1:35
 	tic()
 	z0 = get_grad(y0, lambda, sigma)
 	y0 = y0 + 0.002 * z0
