@@ -1,5 +1,6 @@
 #=
 include("scripts/example3by3.jl")
+julia scripts/example3by3.jl
 =#
 addprocs(9)
 push!(LOAD_PATH, "src")
@@ -21,17 +22,16 @@ X = Array{Float64,1}[[(tmpx[i]- minimum(tmpx))/maximum(tmpx), (tmpy[i]-minimum(t
 
 
 # set an array of lambda, sigmas
-arrayLambda = (10.0, 4.0, 1.0)
-arraySigma  = (10.0, 4.0, 1.0)
+matSigmaLambda = [(s,l) for s in (10.0, 4.0, 1.0), l in (10.0, 4.0, 1.0)] 
 
 #  gradient ascent on kappa and eta_coeff
-est_den_container = @parallel (vcat) for lcntr = 1:3, scntr = 1:3
+est_den_container = @parallel (vcat) for (s,l) in matSigmaLambda
 	kappa = Array{Float64,1}[X[i]  for i in 1:round(nPhi/2)]
 	y0    = Flow(kappa, array1(dim, length(kappa)), X, array2eye(dim, nPhi), dim) 
-	for counter = 1:50
+	for counter = 1:100
 		tic()
-		z0 = get_grad(y0, arrayLambda[lcntr], arraySigma[scntr])
-		y0 = y0 + 0.002 * z0
+		z0 = get_grad(y0, l, s)
+		y0 = y0 + 0.001 * z0
 		toc()
 	end
 	#-- now we save the estimated density
@@ -40,8 +40,8 @@ est_den_container = @parallel (vcat) for lcntr = 1:3, scntr = 1:3
 	phix_grd_0  = Array{Float64,1}[[x_grd[i], y_grd[i]] for i=1:N_grd]
 	Dphix_grd_0 = Array{Float64,2}[eye(2) for i in 1:N_grd]
 	yplt0 = Flow(y0.kappa, y0.eta_coeff, phix_grd_0, Dphix_grd_0, dim) 
-    dydt(t,y)= d_forward_dt(y, sigma)
-    (t1,yplt1)=ode23_abstract_end(dydt,[0,1], yplt0) # Flow y0 forward to time 1
+    dydt(t,y)= d_forward_dt(y, s)
+    (t1,yplt1)=ode23_abstract_end(dydt, [0,1], yplt0) # Flow y0 forward to time 1
 	det_grd = Float64[abs(yplt1.Dphix[i][1]) for i=1:N_grd]
 	den, placeholder = target(phix_grd_0)
 	det_grd.*den
