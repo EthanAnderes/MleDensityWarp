@@ -1,11 +1,13 @@
-# One dimensional example
-push!(LOAD_PATH, homedir()*"/Box Sync/MleDensityWarp/mlewarp_repo/src")
+#= 
+include("scripts/example1.jl")
+=#
+push!(LOAD_PATH, "src")
 require("flowType.jl")
 require("grad.jl")
 require("targets.jl")
-using GaussKernel # sets which kernel you use
+import GaussKernel: R, gradR, g1g1R, g1g2R # sets the kernel
 using  PyCall
-@pyimport matplotlib.pyplot as plt 
+@pyimport matplotlib.pyplot as plt # for saving the images
 
 # set the data and the target
 dim = 1
@@ -37,7 +39,7 @@ function saveim(fignum)
 	fig = plt.figure()
 	plt.hist([pnt[1] for pnt in X], 50, normed=1, histtype="stepfilled")
 	plt.plot(x_grd, est_den)
-	plt.savefig("out/example1_v$fignum.pdf",dpi=180)
+	plt.savefig("simulations/example1_v$fignum.pdf",dpi=180)
 	plt.close(fig)
 end
 

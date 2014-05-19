@@ -1,9 +1,9 @@
 # 2 dimensional example
-push!(LOAD_PATH, homedir()*"/Box Sync/MleDensityWarp/mlewarp_repo/src")
+push!(LOAD_PATH, "src")
 require("flowType.jl")
 require("grad.jl")
 require("targets.jl")
-using GaussKernel # sets which kernel you use
+import GaussKernel: R, gradR, g1g1R, g1g2R # sets the kernel 
 using  PyCall
 @pyimport matplotlib.pyplot as plt 
 

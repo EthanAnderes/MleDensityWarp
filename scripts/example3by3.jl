@@ -1,8 +1,12 @@
-# 2 dimensional example which produces a 3 by 3 table of densities, one for each pair of (lambda, kernel scale)
-push!(LOAD_PATH, homedir()*"/Box Sync/MleDensityWarp/mlewarp_repo/src")
+#=
+include("scripts/example3by3.jl")
+=#
+addprocs(9)
+push!(LOAD_PATH, "src")
 require("flowType.jl")
 require("grad.jl")
 require("targets.jl")
+@everywhere import GaussKernel: R, gradR, g1g1R, g1g2R 
 using  PyCall
 @pyimport matplotlib.pyplot as plt 
 
@@ -13,31 +17,23 @@ tmpy = tmpx + rand(size(tmpx)) .* 1.1
 nPhi = length(tmpx)
 X = Array{Float64,1}[[(tmpx[i]- minimum(tmpx))/maximum(tmpx), (tmpy[i]-minimum(tmpy))/maximum(tmpy)] for i=1:nPhi]
 # target(x) = targetUnif2d(x; targSig = 0.1, limit = 0.4, center = 0.5)
-target(x) = targetNormal2d(x; targSig = 0.5, center = [0.5,0.5])
-using GaussKernel # sets which kernel you use
+@everywhere target(x) = targetNormal2d(x; targSig = 0.5, center = [0.5,0.5])
 
-#---- generate Flow object
-kappa     = Array{Float64,1}[X[i]  for i in 1:round(nPhi/2)]
-# x_grd_kns, y_grd_kns =  meshgrid(linspace(-1.0,1.0, 10),linspace(-1.0,1.0, 10))
-# append!(kappa, Array{Float64,1}[ [x_grd_kns[i], y_grd_kns[i]] for i in 1:length(x_grd_kns)])
-nKap   = length(kappa)
-y0 = Flow(kappa, array1(dim, nKap), X, array2eye(dim, nPhi), dim) 
 
 # set an array of lambda, sigmas
-arrayLambda = (10.0, 1.0, 0.1)
-arraySigma = (10.0, 1.0, 0.1)
+arrayLambda = (10.0, 4.0, 1.0)
+arraySigma  = (10.0, 4.0, 1.0)
 
 #  gradient ascent on kappa and eta_coeff
-ycontainer = Array{Flow,2}
-est_den_container = Array{Array{Float64,2},2}
-for lcntr = 1:3, scntr = 1:3
+est_den_container = @parallel (vcat) for lcntr = 1:3, scntr = 1:3
+	kappa = Array{Float64,1}[X[i]  for i in 1:round(nPhi/2)]
+	y0    = Flow(kappa, array1(dim, length(kappa)), X, array2eye(dim, nPhi), dim) 
 	for counter = 1:50
 		tic()
 		z0 = get_grad(y0, arrayLambda[lcntr], arraySigma[scntr])
 		y0 = y0 + 0.002 * z0
 		toc()
 	end
-	ycontainer[lcntr, scntr] = deepcopy(y0)
 	#-- now we save the estimated density
 	x_grd, y_grd =  meshgrid(linspace(-0.1, 1.1, 175),linspace(-0.1, 1.1, 175))   
 	N_grd = length(x_grd)
@@ -48,8 +44,9 @@ for lcntr = 1:3, scntr = 1:3
     (t1,yplt1)=ode23_abstract_end(dydt,[0,1], yplt0) # Flow y0 forward to time 1
 	det_grd = Float64[abs(yplt1.Dphix[i][1]) for i=1:N_grd]
 	den, placeholder = target(phix_grd_0)
-	est_den_container[lcntr, scntr] = det_grd.*den
+	det_grd.*den
 end
+
 
 
 
