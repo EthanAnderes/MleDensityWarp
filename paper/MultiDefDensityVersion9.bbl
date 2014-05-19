@@ -1,0 +1,159 @@
+\begin{thebibliography}{10}
+
+\bibitem{alla:07}
+S.~Allassonni{\`e}re, Y.~Amit, and A.~Trouv{\'e}.
+\newblock Towards a coherent statistical framework for dense deformable
+  template estimation.
+\newblock {\em Journal of the Royal Statistical Society: Series B (Statistical
+  Methodology)}, 69(1):3--29, 2007.
+
+\bibitem{and:11}
+E.~Anderes and M.~Coram.
+\newblock Two-dimensional density estimation using smooth invertible
+  transformations.
+\newblock {\em Journal of Statistical Planning and Inference}, 141(3):1183 --
+  1193, 2011.
+
+\bibitem{AnderesNychka}
+E.~Anderes, R.~Huser, D.~Nychka, and M.~Coram.
+\newblock Nonstationary positive definite tapering on the plane.
+\newblock {\em Journal of Computational and Graphical Statistics}, to appear.
+
+\bibitem{aro:50}
+N.~Aronszajn.
+\newblock Theory of reproducing kernels.
+\newblock {\em Trans. Amer. Math. Soc.}, 68:337--404, 1950.
+
+\bibitem{Beg:2006ly}
+M.~Beg and A.~Khan.
+\newblock Computing anb average anatomical atlas using lddmm and geodesic
+  shooting.
+\newblock {\em Medical Image Analysis}, pages 1116--1119, 2006.
+
+\bibitem{conf/miccai/BegMTY03}
+M.~Beg, M.~Miller, A.~Trouv{\'e}, and L.~Younes.
+\newblock The euler-lagrange equation for interpolating sequence of landmark
+  datasets.
+\newblock In Randy~E. Ellis and Terry~M. Peters, editors, {\em MICCAI (2)},
+  volume 2879 of {\em Lecture Notes in Computer Science}, pages 918--925.
+  Springer, 2003.
+
+\bibitem{Beg:2005qf}
+M.~Beg, M.~Miller, A.~Trouv{\'e}, and L.~Younes.
+\newblock Computing large deformation metric mappings via geodesic flows of
+  diffeomorphisms.
+\newblock {\em International Journal of Computer Vision}, 61(2):139--157, 2005.
+
+\bibitem{cao:05}
+Y.~Cao, M.~Miller, R.~Winslow, and L.~Younes.
+\newblock Large deformation diffeomorphic metric mapping of vector fields.
+\newblock {\em IEEE Transactions on Medical Imaging}, 24(9):1216--1230, 2005.
+
+\bibitem{chen:05}
+L.~Chen and Q.~Shao.
+\newblock Stein's method for normal approximation.
+\newblock In {\em An introduction to Stein's method. . Lect. Notes Ser. Inst.
+  Math. Sci. Natl. Univ. Singap.}, volume~4. Singapore Univ. Press, Singapore,
+  2005.
+
+\bibitem{cou:36}
+R.~Courant.
+\newblock {\em Differential and Integral Calculus}, volume~2.
+\newblock Wiley, 1936.
+
+\bibitem{dup:98}
+P.~Dupuis, U.~Grenander, and M.~Miller.
+\newblock Variational problems on flows of diffeomorphisms for image matching.
+\newblock {\em Quarterly of Applied Mathematics}, 56(3):587--600, 1998.
+
+\bibitem{Das:2011uq}
+Das et~al.
+\newblock Detection of the power spectrum of cosmic microwave background
+  lensing by the atacama cosmology telescope.
+\newblock {\em Physical Review Letters}, 107(2), 2011.
+
+\bibitem{Grenander:1998:CAE:309082.309089}
+U.~Grenander and M.~Miller.
+\newblock Computational anatomy: an emerging discipline.
+\newblock {\em Q. Appl. Math.}, LVI(4):617--694, December 1998.
+
+\bibitem{hor:91}
+R.~Horn and C.~Johnson.
+\newblock {\em Topics in matrix analysis}.
+\newblock Cambridge University Press, New York, 1991.
+
+\bibitem{mcc:95}
+R.~McCann.
+\newblock Existence and uniqueness of monotone measure-preserving maps.
+\newblock {\em Duke Math. J.}, 80(2):309--323, 1995.
+
+\bibitem{Miller:1999bh}
+M~Miller, S~Joshi, and G~Christensen.
+\newblock Large deformation fluid diffeomorphisms for landmark and image
+  matching.
+\newblock {\em A. Toga}, Brain Warping:115--132, 1999.
+
+\bibitem{Miller:2006zr}
+M.~Miller, A.~Trouv{\'e}, and L.~Younes.
+\newblock Geodesic shooting for computational anatomy.
+\newblock {\em Journal of Mathematical Imaging and Vision}, 24(2):209--228,
+  2006.
+
+\bibitem{Miller:2001ve}
+M.~Miller and L.~Younes.
+\newblock Group actions, homeomorphisms, and matching: A general framework.
+\newblock {\em International Journal of Computer Vision}, 41:61--84, 2001.
+
+\bibitem{ElMoselhy20127815}
+T.~El Moselhy and Y.~Marzouk.
+\newblock Bayesian inference with optimal maps.
+\newblock {\em Journal of Computational Physics}, 231(23):7815 -- 7850, 2012.
+
+\bibitem{rud:66}
+W.~Rudin.
+\newblock {\em Real and complex analysis}.
+\newblock McGraw-Hill, 1966.
+
+\bibitem{stein:81}
+C.~Stein.
+\newblock Estimation of the mean of a multivariate normal distribution.
+\newblock {\em Ann. Statist.}, 9(6):1135--1151, 1981.
+
+\bibitem{stein:04}
+C.~Stein, P.~Diaconis, S.~Holmes, and G.~Reinert.
+\newblock Use of exchangeable pairs in the analysis of simulations.
+\newblock In {\em Stein's method: expository lectures and applications},
+  volume~46 of {\em IMS Lecture Notes Monogr. Ser.}, pages 1--26. Inst. Math.
+  Statist., Beachwood, OH, 2004.
+
+\bibitem{Trouve:1998ys}
+A~Trouv{\'e}.
+\newblock Diffeomorphisms groups and pattern matching in image analysis.
+\newblock {\em International Journal of Computer Vision}, 28(3):213--221, 1998.
+
+\bibitem{ty:dq}
+A.~Trouv{\'e} and Younes L.
+\newblock Local geometry of deformable templates.
+\newblock {\em SIAM J. on Mathematical Analysis}, 37(1):17--59, 2005.
+
+\bibitem{vaillant:04}
+M.~Vaillant, M.~Miller, L.~Younes, and A.~Trouv{\'e}.
+\newblock Statistics on diffeomorphisms via tangent space representations.
+\newblock {\em NeuroImage}, 23, Supplement 1(0):S161 -- S169, 2004.
+
+\bibitem{wahba:90}
+G.~Wahba.
+\newblock {\em Spline Models for Observational Data}.
+\newblock SIAM, Philadelphia, PA., 1990.
+
+\bibitem{you:10}
+L.~Younes.
+\newblock {\em Shapes and diffeomorphisms}.
+\newblock Springer, Heidelberg, 2010.
+
+\bibitem{Younes:2008}
+L.~Younes, A.~Qiu, R.~Winslow, and M.~Miller.
+\newblock Transport of relational structures in groups of diffeomorphisms.
+\newblock {\em J. Math. Imaging Vis.}, 32(1):41--56, 2008.
+
+\end{thebibliography}
