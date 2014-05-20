@@ -20,7 +20,7 @@ X = Array{Float64,1}[[(tmpx[i]- minimum(tmpx))/maximum(tmpx), (tmpy[i]-minimum(t
 
 
 # set an array of lambda, sigmas
-matSigmaLambda = [(s,l) for s in (10.0, 4.0, 1.0), l in (10.0, 4.0, 1.0)] 
+matSigmaLambda = [(s,l) for s in (1.0, 0.5, 0.1), l in (1.0, 0.5, 0.1)] 
 
 #  gradient ascent on kappa and eta_coeff
 est_den_container = @parallel (hcat) for (s,l) in matSigmaLambda
@@ -28,11 +28,10 @@ est_den_container = @parallel (hcat) for (s,l) in matSigmaLambda
 	y0    = Flow(kappa, array1(dim, length(kappa)), X, array2eye(dim, nPhi), dim) 
 	for counter = 1:500
 		z0 = get_grad(y0, l, s)
-		y0 = y0 + 0.01 * z0
+		y0 = y0 + 0.005 * z0
 	end
 	#-- now we save the estimated density
-	x_grd, y_grd =  meshgrid(linspace(-0.1, 1.1, 175),linspace(-0.1, 1.1, 175))   
-	length(x_grd) = length(x_grd)
+	x_grd, y_grd =  meshgrid(linspace(-0.1, 1.1, 175), linspace(-0.1, 1.1, 175))   
 	phix_grd_0  = Array{Float64,1}[[x_grd[i], y_grd[i]] for i=1:length(x_grd)]
 	Dphix_grd_0 = Array{Float64,2}[eye(2)               for i=1:length(x_grd)]
 	yplt0 = Flow(y0.kappa, y0.eta_coeff, phix_grd_0, Dphix_grd_0, dim) 

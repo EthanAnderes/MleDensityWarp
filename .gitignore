@@ -1,2 +1,4 @@
 simulations/*
-paper/*
+!/paper
+/paper/*
+!/paper/MultiDefDensity.tex
