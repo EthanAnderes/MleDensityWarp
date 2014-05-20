@@ -26,14 +26,12 @@ y0 = Flow(kappa, array1(dim, nKap), X, array2eye(dim, nPhi), dim)
 function saveim(fignum)
 	x_grd = linspace(-0.2, 1.2, 300)  
 	phix_grd_0  = Array{Float64,1}[[x_grd[i]] for i=1:length(x_grd)]
-	Dphix_grd_0 = Array{Float64,2}[ones(1,1) for i in 1:length(x_grd)]
+	Dphix_grd_0 = Array{Float64,2}[ones(1,1)  for i=1:length(x_grd)]
 	yplt0 = Flow(y0.kappa, y0.eta_coeff, phix_grd_0, Dphix_grd_0, dim) 
-
-    dydt(t,y)= d_forward_dt(y, sigma)
-    (t1,yplt1)=ode23_abstract_end(dydt,[0,1], yplt0) # Flow y0 forward to time 1
-    
+	dydt(t,y)= d_forward_dt(y, sigma)
+	(t1,yplt1)=ode23_abstract_end(dydt,[0,1], yplt0) # Flow y0 forward to time 1
 	det_grd = Float64[abs(yplt1.Dphix[i][1]) for i=1:length(x_grd)]
-	den, placeholder = target(phix_grd_0)
+	den,    = target(yplt1.phix) 
 	est_den = det_grd.*den
 	
 	fig = plt.figure()
