@@ -20,7 +20,7 @@ X = Array{Float64,1}[[(tmpx[i]- minimum(tmpx))/maximum(tmpx), (tmpy[i]-minimum(t
 
 
 # set an array of lambda, sigmas
-matSigmaLambda = [(s,l) for s in (0.4, 0.2, 0.05), l in (10.0, 5.0, 1.0)] 
+matSigmaLambda = [(s,l) for s in (0.4, 0.2, 0.1), l in (10.0, 5.0, 0.5)] 
 
 #  gradient ascent on kappa and eta_coeff
 est_den_container = @parallel (hcat) for (s,l) in matSigmaLambda
@@ -47,11 +47,18 @@ writecsv("simulations/example3by3X.csv", hcat(X...))
 #=
 using PyCall
 @pyimport matplotlib.pyplot as plt
+push!(LOAD_PATH, "src")
+require("flowType.jl")
+require("grad.jl")
+require("targets.jl")
+import GaussKernel: R, gradR, g1g1R, g1g2R 
+dim = 2
+matSigmaLambda = [(s,l) for s in (0.4, 0.2, 0.05), l in (10.0, 5.0, 1.0)] 
 est_den_container = readcsv("simulations/example3by3den.csv")
 Xcat = readcsv("simulations/example3by3X.csv")
 X =  Array{Float64,1}[Xcat[:,k] for k in 1:size(Xcat,2) ]
 x_grd, y_grd =  meshgrid(linspace(-0.1, 1.1, 175),linspace(-0.1, 1.1, 175))   
-fig = plt.figure(figsize=(10,10))
+fig = plt.figure(figsize=(14,14))
 for k = 1:9
 	plt.subplot(3,3,k)
 	plt.title("(sigma, lambda) = $(matSigmaLambda[k])")
