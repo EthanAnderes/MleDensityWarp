@@ -1,6 +1,5 @@
 #=
 include("scripts/example3by3.jl")
-julia scripts/example3by3.jl
 =#
 addprocs(4)
 using WarpFlow
@@ -29,7 +28,7 @@ est_den_container = @parallel (hcat) for (s,l) in matSigmaLambda
 	end
 	#-- now we save the estimated density
 	x_grd, y_grd =  WarpFlow.meshgrid(linspace(-0.1, 1.1, 175), linspace(-0.1, 1.1, 175))
-	phix_grd_0   = Array{Float64,1}[[x_grd[i], y_grd[i]] for i=1:length(x_grd)]
+	phix_grd_0   = Array{Float64,1}[[x_grd[i]; y_grd[i]] for i=1:length(x_grd)]
 	Dphix_grd_0  = Array{Float64,2}[eye(2)               for i=1:length(x_grd)]
 	yplt0        = Flow(y0.kappa, y0.eta_coeff, phix_grd_0, Dphix_grd_0, dim)
 	dydt(t,y)    = WarpFlow.d_forward_dt(y, s)
@@ -51,8 +50,8 @@ rmprocs(workers())
 #X =  Array{Float64,1}[Xcat[:,k] for k in 1:size(Xcat,2) ]
 x_grd, y_grd =  WarpFlow.meshgrid(linspace(-0.1, 1.1, 175),linspace(-0.1, 1.1, 175))
 fig = figure(figsize=(14,14))
-for k = 1:9
-	subplot(3,3,k)
+for k = 1:4
+	subplot(2,2,k)
 	title("(sigma, lambda) = $(matSigmaLambda[k])")
 	scatter(Float64[point[1] for point in X], Float64[point[2] for point in X], c="b")
 	contour(x_grd, y_grd, reshape(est_den_container[:,k], size(x_grd)), 30)
