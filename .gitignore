@@ -2,3 +2,4 @@ simulations/*
 !/paper
 /paper/*
 !/paper/MultiDefDensity.pdf
+gitignore
